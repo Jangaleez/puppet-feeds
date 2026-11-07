@@ -1,0 +1,8 @@
+{
+  "name": "puppet-feeds",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "livekit-server-sdk": "2.19.2"
+  }
+}

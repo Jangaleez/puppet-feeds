@@ -1,0 +1,906 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Puppet Feeds</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gochi+Hand&family=Comic+Neue:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: tuner header with one smart search box, subscriptions rail on the left, results/feed in the main column, a transport bar pinned to the bottom. */
+:root{
+  --bg:#f3f4f7; --panel:#ffffff; --ink:#151a24; --muted:#5d6577; --line:#dde1ea;
+  --accent:#d9730d; --accent-ink:#ffffff; --chip:#e9ecf3; --bad:#b3261e;
+  --display:"Familjen Grotesk",system-ui,sans-serif;
+  --body:"IBM Plex Sans",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#10131a; --panel:#181c26; --ink:#e7e9ef; --muted:#9aa2b4; --line:#2a3040;
+  --accent:#f0913a; --accent-ink:#1a1206; --chip:#232838; --bad:#ff8a80; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#10131a; --panel:#181c26; --ink:#e7e9ef; --muted:#9aa2b4; --line:#2a3040;
+  --accent:#f0913a; --accent-ink:#1a1206; --chip:#232838; --bad:#ff8a80; color-scheme:dark}
+
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--body);padding-bottom:110px}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+header{border-bottom:1px solid var(--line);background:var(--panel)}
+header .wrap{padding-block:18px;display:flex;flex-direction:column;gap:12px}
+.brand{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.brand h1{font:700 26px/1 var(--display);margin:0;letter-spacing:-.01em}
+.brand span{color:var(--muted);font-size:13px}
+form.search{display:flex;gap:8px}
+form.search input{flex:1;min-width:0;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+.btn{border:1px solid var(--line);background:var(--chip);border-radius:10px;padding:10px 14px;font-weight:600}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:0;background:var(--chip);border-radius:999px;padding:5px 12px;font-size:13px}
+.chip:hover{background:var(--line)}
+
+main .wrap{display:grid;grid-template-columns:260px 1fr;gap:24px;padding-block:24px}
+@media (max-width:820px){main .wrap{grid-template-columns:1fr}}
+aside h2,.section-h{font:600 12px/1 var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+.subs{display:flex;flex-direction:column;gap:2px}
+.sub{display:flex;align-items:center;gap:10px;padding:8px;border-radius:8px;border:0;background:none;text-align:left;width:100%}
+.sub:hover,.sub.on{background:var(--chip)}
+.sub img,.thumb{width:36px;height:36px;border-radius:6px;object-fit:cover;background:var(--chip);flex:none}
+.sub b{font-weight:500;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.empty{color:var(--muted);font-size:14px}
+.content{min-width:0}
+
+.status{padding:12px 14px;border-radius:10px;background:var(--chip);color:var(--muted);font-size:14px;margin-bottom:16px}
+.status.err{color:var(--bad)}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:16px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;text-align:left;padding:0}
+.card:hover{border-color:var(--accent)}
+.card img{width:100%;aspect-ratio:1;object-fit:cover;background:var(--chip);display:block;max-width:100%}
+.card .ph{width:100%;aspect-ratio:1;background:var(--chip);display:grid;place-items:center;font:700 30px var(--display);color:var(--muted)}
+.card div.meta{padding:10px 12px 12px;display:flex;flex-direction:column;gap:2px}
+.card b{font-weight:600;font-size:14px;line-height:1.3}
+.card small{color:var(--muted);font-size:12px}
+
+.feedhead{display:flex;gap:18px;align-items:flex-start;margin-bottom:20px;flex-wrap:wrap}
+.feedhead img{width:120px;height:120px;border-radius:12px;object-fit:cover;background:var(--chip)}
+.feedhead .t{flex:1;min-width:220px}
+.feedhead h2{font:700 28px/1.1 var(--display);margin:0 0 6px;text-wrap:balance}
+.feedhead p{margin:0 0 12px;color:var(--muted);max-width:65ch}
+.feedhead .row{display:flex;gap:8px;flex-wrap:wrap}
+.url{font:12px var(--mono);color:var(--muted);word-break:break-all;margin-top:8px}
+
+#stage{margin-bottom:20px;background:#000;border-radius:12px;overflow:hidden}
+#stage video,#stage iframe{display:block;width:100%;aspect-ratio:16/9;border:0;max-width:100%}
+#stage .bar{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 12px;background:var(--panel);border:1px solid var(--line);border-top:0;border-radius:0 0 12px 12px}
+
+.eps{display:flex;flex-direction:column;border-top:1px solid var(--line)}
+.ep{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:start;padding:14px 0;border-bottom:1px solid var(--line)}
+.ep .thumb{width:64px;height:64px}
+.ep .yt{width:112px;height:63px}
+.ep h3{margin:0 0 3px;font-size:15px;font-weight:600;line-height:1.35}
+.ep .info{font:12px var(--mono);color:var(--muted);display:flex;gap:10px;flex-wrap:wrap}
+.ep p{margin:6px 0 0;color:var(--muted);font-size:14px;max-width:70ch;overflow-wrap:anywhere}
+.ep .txt{min-width:0}
+.tag{font:500 11px var(--mono);text-transform:uppercase;letter-spacing:.06em;padding:1px 6px;border-radius:4px;background:var(--chip);color:var(--ink)}
+.tag.v{background:var(--accent);color:var(--accent-ink)}
+.play{width:44px;height:44px;border-radius:50%;border:0;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center}
+.play:disabled{background:var(--chip);color:var(--muted);cursor:default}
+.more{border:0;background:none;color:var(--accent);padding:0;font-size:13px}
+@media (max-width:520px){.ep{grid-template-columns:1fr auto}.ep .thumb,.ep .yt{display:none}}
+
+#player{position:fixed;left:0;right:0;bottom:0;background:var(--panel);border-top:1px solid var(--line);z-index:5;padding-bottom:env(safe-area-inset-bottom,0px)}
+#player .wrap{padding-block:12px;display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center}
+#player .np{display:flex;gap:10px;align-items:center;min-width:0}
+#player .np img{width:48px;height:48px;border-radius:6px;object-fit:cover;background:var(--chip)}
+#player .np b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#player .np small{color:var(--muted);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.npt{min-width:0}
+.transport{display:flex;align-items:center;gap:8px}
+.transport button{border:0;background:var(--chip);border-radius:8px;padding:6px 9px;font:500 12px var(--mono)}
+.transport .pp{background:var(--accent);color:var(--accent-ink);width:40px;height:40px;border-radius:50%;font-size:16px}
+.seek{display:flex;align-items:center;gap:8px;font:12px var(--mono);color:var(--muted);font-variant-numeric:tabular-nums}
+.seek input{flex:1;accent-color:var(--accent);min-width:60px}
+#speed{background:var(--chip);border:0;border-radius:8px;padding:6px;font:12px var(--mono)}
+@media (max-width:760px){#player .wrap{grid-template-columns:1fr auto}.seek{grid-column:1/-1;order:3}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* ===== Paint-program theme: thick wobbly outlines, hard shadows, Bitcoin orange ===== */
+:root{
+  --bg:#fffdf6; --panel:#ffffff; --ink:#111111; --muted:#4a4a4a; --line:#111111;
+  --accent:#f7931a; --accent-ink:#111111; --chip:#ffe14d; --sky:#7fd3ff; --bad:#d4130f;
+  --stroke:#111111; --shadow:#111111; --dots:#e9e2cf;
+  --display:"Gochi Hand","Comic Sans MS","Comic Neue",cursive;
+  --body:"Comic Neue","Comic Sans MS",system-ui,sans-serif;
+  --wobble:255px 18px 225px 18px/18px 225px 18px 255px;
+  --wobble2:18px 225px 18px 255px/255px 18px 225px 18px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#15130f; --panel:#1f1c16; --ink:#fff8e6; --muted:#d6ccb4; --line:#fff8e6;
+  --accent:#f7931a; --accent-ink:#111111; --chip:#ffd21f; --sky:#4fb8ec; --bad:#ff7a6e;
+  --stroke:#fff8e6; --shadow:#f7931a; --dots:#2a261d; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#15130f; --panel:#1f1c16; --ink:#fff8e6; --muted:#d6ccb4; --line:#fff8e6;
+  --accent:#f7931a; --accent-ink:#111111; --chip:#ffd21f; --sky:#4fb8ec; --bad:#ff7a6e;
+  --stroke:#fff8e6; --shadow:#f7931a; --dots:#2a261d; color-scheme:dark}
+
+body{background:var(--bg) radial-gradient(var(--dots) 1.5px,transparent 1.6px) 0 0/22px 22px;font-size:16px}
+header{background:var(--accent);border-bottom:4px solid var(--stroke)}
+.brand h1{font:400 44px/1 var(--display);color:#111;transform:rotate(-1.5deg);letter-spacing:0}
+.brand{align-items:center}
+.mascot{width:76px;height:76px;flex:none;display:block;animation:bob 2.6s ease-in-out infinite;transform-origin:50% 100%}
+.mascot img,.mascot svg{width:100%;height:100%;object-fit:contain;display:block}
+@keyframes bob{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(6deg) translateY(-3px)}}
+header .mascot{border:3px solid #111;border-radius:var(--wobble);box-shadow:4px 4px 0 #111;overflow:hidden;width:84px;height:84px}
+.mascot img{object-fit:cover}
+.status .mascot{border:2px solid var(--stroke);border-radius:var(--wobble2);overflow:hidden}
+.status{display:flex;align-items:center;gap:12px}
+.status .mascot{width:54px;height:54px}
+footer{border-top:3px dashed var(--stroke);margin-top:12px}
+footer .wrap{padding-block:16px;font-size:13px;color:var(--muted)}
+footer b{color:var(--ink)}
+@media (prefers-reduced-motion:reduce){.mascot{animation:none}}
+
+/* ===== Listening party ===== */
+.party-open{margin-left:auto;display:inline-flex;align-items:center;gap:8px;background:#fff;color:#111;border-color:#111;box-shadow:3px 3px 0 #111}
+.live-dot{width:10px;height:10px;border-radius:50%;background:#999;border:2px solid #111}
+.party-open.on .live-dot{background:#e0201b;animation:pulse 1.2s ease-in-out infinite}
+@keyframes pulse{50%{transform:scale(1.35)}}
+#party .wrap{padding-block:18px 0}
+.party-box{background:var(--panel);border:3px solid var(--stroke);border-radius:var(--wobble);box-shadow:6px 6px 0 var(--shadow);padding:18px;display:flex;flex-direction:column;gap:14px}
+.party-box h2{font:400 30px/1 var(--display);margin:0}
+.party-box p{margin:0;color:var(--muted);max-width:65ch}
+.party-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.party-row input{flex:1;min-width:160px;max-width:320px;padding:10px 14px;border:3px solid var(--stroke);border-radius:var(--wobble);background:var(--bg)}
+.party-top{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.live{font:400 26px/1 var(--display);display:flex;align-items:center;gap:10px}
+.live .live-dot{background:#e0201b;animation:pulse 1.2s ease-in-out infinite}
+.people{display:flex;flex-wrap:wrap;gap:10px}
+.person{display:flex;align-items:center;gap:8px;padding:6px 12px 6px 6px;border:2px solid var(--stroke);border-radius:var(--wobble);background:var(--bg);font-weight:700;font-size:14px;transition:box-shadow .15s}
+.av{width:30px;height:30px;border-radius:50%;background:var(--accent);color:#111;display:grid;place-items:center;border:2px solid var(--stroke);font-family:var(--display);font-size:16px;flex:none}
+.person.speaking{box-shadow:0 0 0 4px var(--accent)}
+.person small{font:500 11px var(--mono);color:var(--muted)}
+.person .tag{margin-left:2px}
+.mic-off{opacity:.55}
+.sync{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 12px;border:2px dashed var(--stroke);border-radius:var(--wobble2);font-weight:700}
+.btn.danger{background:var(--bad);color:#fff}
+.btn.on{background:var(--accent);color:#111}
+.party-box .party-err{color:var(--bad);font-weight:700}
+.sp-title{display:flex;flex-direction:column;gap:6px;min-width:0}
+.sp-title h2{font:400 30px/1.05 var(--display);margin:0;text-wrap:balance;overflow-wrap:anywhere}
+.count{font:12px var(--mono);color:var(--muted)}
+.party-box .section-h{margin:4px 0 0}
+.stage{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;align-items:start}
+.manage{margin-top:4px}
+.manage summary{cursor:pointer;font:700 12px var(--body);list-style:none;border:2px solid var(--stroke);border-radius:var(--wobble2);padding:2px 10px;background:var(--panel);box-shadow:2px 2px 0 var(--shadow)}
+.manage summary::-webkit-details-marker{display:none}
+.manage[open] summary{background:var(--chip);color:#111}
+.manage .acts{flex-direction:column;align-items:stretch;margin-top:6px}
+.person .manage .acts{flex-direction:row}
+.speaker{display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px;padding:14px 10px;border:2px solid var(--stroke);border-radius:var(--wobble);background:var(--bg);min-width:0}
+.speaker b{font-size:15px;overflow-wrap:anywhere}
+.speaker small{font:500 11px var(--mono);color:var(--muted)}
+.av.big{width:64px;height:64px;font-size:30px;border-width:3px;transition:box-shadow .15s}
+.speaker.speaking .av.big{box-shadow:0 0 0 5px var(--accent),0 0 0 8px var(--stroke)}
+.acts{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;margin-top:4px}
+.person .acts{margin:0 0 0 4px;justify-content:flex-start}
+.mini{border:2px solid var(--stroke);background:var(--panel);border-radius:var(--wobble2);padding:2px 8px;font:700 12px var(--body);box-shadow:2px 2px 0 var(--shadow)}
+.mini:hover{background:var(--chip);color:#111}
+.mini.go{background:var(--accent);color:#111}
+.person.hand{background:var(--chip);color:#111}
+.person.hand small{color:#111}
+.person{flex-wrap:wrap}
+.host-login summary{cursor:pointer;font-weight:700;font-size:14px;color:var(--muted);width:max-content}
+.host-login .party-row{margin-top:8px}
+.brand span{color:#111;font-weight:700}
+form.search input{background:#fff;color:#111;border:3px solid #111;border-radius:var(--wobble);box-shadow:4px 4px 0 #111;padding:12px 16px}
+.btn{border:3px solid var(--stroke);border-radius:var(--wobble2);box-shadow:3px 3px 0 var(--shadow);font-family:var(--display);font-size:19px;padding:6px 16px;transition:transform .08s}
+.btn:hover{transform:translate(-1px,-1px) rotate(-1deg)}
+.btn:active,.chip:active,.card:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--shadow)}
+header .btn.primary{background:#fff;color:#111;border-color:#111;box-shadow:3px 3px 0 #111}
+.chip{border:2px solid #111;background:#fff;color:#111;font-weight:700;border-radius:var(--wobble);box-shadow:2px 2px 0 #111}
+.chip:nth-child(3n+1){background:var(--chip);color:#111}
+.chip:nth-child(3n+2){background:var(--sky);color:#111}
+.chip:hover{background:#111;color:#fff}
+
+aside h2,.section-h{font:400 24px/1 var(--display);letter-spacing:0;text-transform:none;color:var(--ink);transform:rotate(-1deg)}
+.sub{border-radius:var(--wobble);border:2px solid transparent}
+.sub:hover,.sub.on{background:var(--chip);color:#111;border-color:var(--stroke)}
+.sub img,.thumb{border:2px solid var(--stroke);border-radius:var(--wobble2)}
+
+.status{background:var(--panel);border:3px dashed var(--stroke);border-radius:var(--wobble);color:var(--ink);font-weight:700}
+
+.grid{gap:22px}
+.card{border:3px solid var(--stroke);border-radius:var(--wobble);box-shadow:5px 5px 0 var(--shadow);transition:transform .1s}
+.card:nth-child(odd){transform:rotate(-1.2deg)}
+.card:nth-child(even){transform:rotate(1deg)}
+.card:hover{transform:rotate(0) scale(1.03);border-color:var(--stroke)}
+.card img,.card .ph{border-bottom:3px solid var(--stroke)}
+.card .ph{background:var(--accent);color:#111;font-family:var(--display)}
+.card b{font-weight:700}
+
+.feedhead img{border:3px solid var(--stroke);border-radius:var(--wobble);box-shadow:5px 5px 0 var(--shadow);transform:rotate(-2deg)}
+.feedhead h2{font:400 40px/1.05 var(--display)}
+
+#stage{border:3px solid var(--stroke);border-radius:var(--wobble);box-shadow:6px 6px 0 var(--shadow)}
+#stage .bar{border:0;border-top:3px solid var(--stroke);border-radius:0}
+
+.eps{border-top:3px solid var(--stroke)}
+.ep{border-bottom:2px dashed var(--stroke)}
+.ep h3{font-weight:700;font-size:16px}
+.tag{border:2px solid var(--stroke);background:var(--sky);color:#111;font-weight:500}
+.tag.v{background:var(--accent);color:#111}
+.play{border:3px solid var(--stroke);box-shadow:3px 3px 0 var(--shadow);font-size:17px;color:#111}
+.play:hover{transform:rotate(-8deg) scale(1.08)}
+.play:disabled{border-style:dashed;box-shadow:none}
+.more{color:var(--accent);font-weight:700;text-decoration:underline wavy}
+
+#player{border-top:4px solid var(--stroke);background:var(--chip);color:#111}
+#player .np small,.seek{color:#111}
+#player .np img{border:3px solid #111;border-radius:var(--wobble2)}
+.transport button{border:2px solid #111;background:#fff;color:#111;box-shadow:2px 2px 0 #111;border-radius:var(--wobble)}
+.transport .pp{background:var(--accent);border:3px solid #111}
+#speed{border:2px solid #111;background:#fff;color:#111}
+.seek input{accent-color:#111}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <div class="brand">
+    <span class="mascot" id="mascot" aria-hidden="true"></span>
+    <h1>Puppet Feeds</h1><span>World peace through podcasts. Search, or paste any site, YouTube channel or feed link</span>
+    <button class="btn party-open" type="button" id="partyBtn"><span class="live-dot"></span>Puppet Space</button>
+  </div>
+  <form class="search" id="searchForm">
+    <input id="q" type="search" placeholder="e.g. history   ·   bbc.co.uk   ·   youtube.com/@veritasium" autocomplete="off">
+    <button class="btn primary" type="submit">Go</button>
+  </form>
+  <div class="chips" id="chips"></div>
+</div></header>
+
+<section id="party" hidden><div class="wrap"><div class="party-box" id="partyBox"></div></div></section>
+
+<main><div class="wrap">
+  <aside>
+    <h2>Subscriptions</h2>
+    <div class="subs" id="subs"></div>
+  </aside>
+  <section class="content" id="content"></section>
+</div></main>
+
+<footer><div class="wrap">
+  <b>Puppet Feeds</b> is a community derivative of Bitcoin Puppets, shared under the VPL (Viral Public License). Use it, change it, pass it on.
+</div></footer>
+
+<div id="player" hidden><div class="wrap">
+  <div class="np"><img id="npImg" alt=""><div class="npt"><b id="npTitle"></b><small id="npFeed"></small></div></div>
+  <div class="seek"><span id="cur">0:00</span><input id="seek" type="range" min="0" max="0" step="1" value="0" aria-label="Seek"><span id="dur">0:00</span></div>
+  <div class="transport">
+    <button id="back" title="Back 15 seconds">−15</button>
+    <button id="pp" class="pp" title="Play or pause">▶</button>
+    <button id="fwd" title="Forward 30 seconds">+30</button>
+    <select id="speed" aria-label="Speed"><option>0.8</option><option selected>1</option><option>1.25</option><option>1.5</option><option>1.75</option><option>2</option></select>
+  </div>
+</div></div>
+<audio id="audio" preload="metadata"></audio>
+
+<script>
+/* ===== Mascot =====
+   To use a real Puppet: paste an image link (or a data: URI) between the quotes below.
+   Leave it empty to keep the hand-drawn doodle. */
+const PUPPET_IMAGE = "data:image/webp;base64,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";
+
+const PUPPET_SVG = `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <path d="M30 96 C28 80 32 70 36 64 L64 64 C68 72 71 82 70 96 Z" fill="#7fd3ff" stroke="#111" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M36 80 L64 79 M35 88 L66 88" stroke="#111" stroke-width="2.5" fill="none" stroke-dasharray="4 4"/>
+  <path d="M50 8 C74 6 88 22 86 42 C85 60 70 70 50 69 C28 70 13 58 14 40 C14 20 28 9 50 8 Z" fill="#f7931a" stroke="#111" stroke-width="4"/>
+  <path d="M22 18 C14 8 6 12 9 22 M78 18 C86 8 94 12 91 22" stroke="#111" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <ellipse cx="36" cy="34" rx="9" ry="10" fill="#fff" stroke="#111" stroke-width="3"/>
+  <ellipse cx="63" cy="33" rx="7" ry="9" fill="#fff" stroke="#111" stroke-width="3"/>
+  <circle cx="38" cy="36" r="4" fill="#111"/><circle cx="61" cy="35" r="3.5" fill="#111"/>
+  <path d="M30 50 C40 62 60 62 72 48" stroke="#111" stroke-width="4" fill="#fff" stroke-linecap="round"/>
+  <path d="M44 56 L45 61 M54 56 L54 61" stroke="#111" stroke-width="2.5"/>
+  <circle cx="24" cy="46" r="4" fill="#ff7a6e" opacity=".8"/><circle cx="77" cy="44" r="4" fill="#ff7a6e" opacity=".8"/>
+</svg>`;
+const mascotHTML = () => PUPPET_IMAGE ? `<img src="${PUPPET_IMAGE.replace(/"/g,"&quot;")}" alt="">` : PUPPET_SVG;
+
+const $ = s => document.querySelector(s);
+$("#mascot").innerHTML = mascotHTML();
+const content = $("#content");
+const audio = $("#audio");
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const store = {
+  get(k, d){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; }catch{ return d; } },
+  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch{} }
+};
+
+/* ---------- Network: direct first, then public CORS relays ---------- */
+const RELAYS = [
+  u => u,
+  u => "https://api.allorigins.win/raw?url=" + encodeURIComponent(u),
+  u => "https://corsproxy.io/?url=" + encodeURIComponent(u),
+  u => "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(u),
+];
+/* Script-tag loading (JSONP) isn't subject to the same browser restrictions as fetch, so it works in more browsers. */
+function jsonp(url, timeout = 15000){
+  return new Promise((resolve, reject) => {
+    const cb = "fxcb" + Math.random().toString(36).slice(2);
+    const s = document.createElement("script");
+    const done = () => { clearTimeout(t); try{ delete window[cb]; }catch{} s.remove(); };
+    const t = setTimeout(() => { done(); reject(new Error("timed out")); }, timeout);
+    window[cb] = d => { done(); resolve(d); };
+    s.onerror = () => { done(); reject(new Error("blocked")); };
+    s.src = url + (url.includes("?") ? "&" : "?") + "callback=" + cb;
+    document.head.appendChild(s);
+  });
+}
+const FAIL_MSG = "Couldn't load that address. If you're using Brave, its Shields may be blocking the page: try turning Shields off for this page, or open the file in Chrome or Edge.";
+async function getText(url){
+  const ctls = [];
+  const viaFetch = async build => {
+    const ctl = new AbortController(); ctls.push(ctl);
+    const t = setTimeout(() => ctl.abort(), 15000);
+    try{
+      const res = await fetch(build(url), {signal: ctl.signal});
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const txt = await res.text();
+      if (!txt || txt.length < 20) throw new Error("Empty response");
+      return txt;
+    } finally { clearTimeout(t); }
+  };
+  const viaJsonp = async () => {
+    const d = await jsonp("https://api.allorigins.win/get?url=" + encodeURIComponent(url));
+    if (!d?.contents || d.contents.length < 20) throw new Error("Empty response");
+    return d.contents;
+  };
+  try{
+    const txt = await Promise.any([...RELAYS.map(viaFetch), viaJsonp()]);
+    ctls.forEach(c => c.abort());
+    return txt;
+  }catch{ throw new Error(FAIL_MSG); }
+}
+
+/* ---------- Feed parsing (RSS 2.0, Atom, YouTube) ---------- */
+function kid(el, ...names){ if(!el) return null; for (const n of names) for (const c of el.children) if (c.tagName === n) return c; return null; }
+function kids(el, name){ return el ? [...el.children].filter(c => c.tagName === name) : []; }
+const txt = el => el ? el.textContent.trim() : "";
+const strip = html => { const d = new DOMParser().parseFromString(html || "", "text/html"); return (d.body.textContent || "").replace(/\s+/g, " ").trim(); };
+
+function mediaKind(url, type){
+  type = (type || "").toLowerCase(); const u = (url || "").toLowerCase().split("?")[0];
+  if (type.startsWith("video") || /\.(mp4|m4v|webm|mov)$/.test(u)) return "video";
+  if (type.startsWith("audio") || /\.(mp3|m4a|aac|ogg|oga|opus|wav|flac)$/.test(u)) return "audio";
+  return null;
+}
+function looksLikeFeed(t){ return /<(rss|feed|rdf:RDF)[\s>]/i.test(t.slice(0, 3000)); }
+
+function parseFeed(xmlText, feedUrl){
+  const doc = new DOMParser().parseFromString(xmlText, "text/xml");
+  if (doc.querySelector("parsererror")) throw new Error("That address didn't return a readable feed.");
+  const root = doc.documentElement;
+  const feed = {url: feedUrl, title:"", description:"", image:"", link:"", items:[]};
+  if (root.tagName === "feed"){ // Atom / YouTube
+    feed.title = txt(kid(root,"title"));
+    feed.description = strip(txt(kid(root,"subtitle")));
+    feed.image = txt(kid(root,"logo")) || txt(kid(root,"icon"));
+    const alt = kids(root,"link").find(l => (l.getAttribute("rel")||"alternate") === "alternate");
+    feed.link = alt?.getAttribute("href") || "";
+    for (const e of kids(root,"entry")){
+      const g = kid(e,"media:group");
+      const vid = txt(kid(e,"yt:videoId"));
+      const encl = kids(e,"link").find(l => l.getAttribute("rel") === "enclosure");
+      const mc = kid(g,"media:content") || kid(e,"media:content");
+      const link = kids(e,"link").find(l => (l.getAttribute("rel")||"alternate") === "alternate")?.getAttribute("href") || "";
+      let media = encl?.getAttribute("href") || mc?.getAttribute("url") || "";
+      let kind = vid ? "youtube" : mediaKind(media, encl?.getAttribute("type") || mc?.getAttribute("type"));
+      feed.items.push({
+        title: txt(kid(e,"title")), link, date: txt(kid(e,"published")) || txt(kid(e,"updated")),
+        desc: strip(txt(kid(g,"media:description")) || txt(kid(e,"summary")) || txt(kid(e,"content"))),
+        image: kid(g,"media:thumbnail")?.getAttribute("url") || "", media, kind, vid, duration: ""
+      });
+    }
+    if (!feed.image && feed.items[0]?.vid) feed.image = feed.items[0].image;
+  } else { // RSS 2.0 / RDF
+    const ch = kid(root,"channel") || root;
+    feed.title = txt(kid(ch,"title"));
+    feed.description = strip(txt(kid(ch,"description")) || txt(kid(ch,"itunes:summary")));
+    feed.image = kid(ch,"itunes:image")?.getAttribute("href") || txt(kid(kid(ch,"image"),"url"));
+    feed.link = txt(kid(ch,"link"));
+    const items = kids(ch,"item").length ? kids(ch,"item") : kids(root,"item");
+    for (const it of items){
+      const enc = kid(it,"enclosure");
+      const mc = kid(it,"media:content") || kid(kid(it,"media:group"),"media:content");
+      const media = enc?.getAttribute("url") || mc?.getAttribute("url") || "";
+      feed.items.push({
+        title: txt(kid(it,"title")), link: txt(kid(it,"link")), date: txt(kid(it,"pubDate")) || txt(kid(it,"dc:date")),
+        desc: strip(txt(kid(it,"description")) || txt(kid(it,"itunes:summary")) || txt(kid(it,"content:encoded"))),
+        image: kid(it,"itunes:image")?.getAttribute("href") || kid(it,"media:thumbnail")?.getAttribute("url") || "",
+        media, kind: mediaKind(media, enc?.getAttribute("type") || mc?.getAttribute("type")),
+        duration: txt(kid(it,"itunes:duration"))
+      });
+    }
+  }
+  feed.title ||= new URL(feedUrl).hostname;
+  return feed;
+}
+
+/* ---------- Discovery: turn any link into feed candidates ---------- */
+const COMMON = ["/feed","/rss","/feed.xml","/rss.xml","/atom.xml","/index.xml","/feed/podcast","/podcast.xml"];
+async function discover(input){
+  let url = input.trim(); if (!/^https?:\/\//i.test(url)) url = "https://" + url;
+  const u = new URL(url); const host = u.hostname.replace(/^www\.|^m\./,"");
+  if (host === "youtube.com" || host === "youtu.be"){
+    const list = u.searchParams.get("list");
+    if (list) return [{url:`https://www.youtube.com/feeds/videos.xml?playlist_id=${list}`, title:"YouTube playlist"}];
+    const m = u.pathname.match(/\/channel\/(UC[\w-]{22})/);
+    if (m) return [{url:`https://www.youtube.com/feeds/videos.xml?channel_id=${m[1]}`, title:"YouTube channel"}];
+    const html = await getText(url);
+    const id = (html.match(/"(?:channelId|externalId)":"(UC[\w-]{22})"/) || html.match(/channel_id=(UC[\w-]{22})/) || [])[1];
+    if (id) return [{url:`https://www.youtube.com/feeds/videos.xml?channel_id=${id}`, title:"YouTube channel"}];
+    throw new Error("Couldn't find the channel on that YouTube page. Try the channel's main page link.");
+  }
+  if (host === "reddit.com" && /^\/r\/[^/]+/.test(u.pathname))
+    return [{url:`https://www.reddit.com${u.pathname.replace(/\/$/,"")}/.rss`, title:"Subreddit"}];
+
+  const body = await getText(url);
+  if (looksLikeFeed(body)) return [{url, title:"", direct: body}];
+  const doc = new DOMParser().parseFromString(body, "text/html");
+  const found = [...doc.querySelectorAll('link[rel~="alternate"]')]
+    .filter(l => /(rss|atom)\+xml|application\/xml|text\/xml/i.test(l.getAttribute("type")||""))
+    .map(l => ({url: new URL(l.getAttribute("href"), url).href, title: l.getAttribute("title") || ""}));
+  if (found.length) return dedupe(found);
+  const tries = await Promise.all(COMMON.map(async p => {
+    const cand = new URL(p, u.origin).href;
+    try{ const t = await getText(cand); return looksLikeFeed(t) ? {url:cand, title:p, direct:t} : null; }catch{ return null; }
+  }));
+  const ok = tries.filter(Boolean);
+  if (ok.length) return dedupe(ok);
+  throw new Error("No feed found on that site. Some sites don't publish one.");
+}
+const dedupe = a => a.filter((x,i) => a.findIndex(y => y.url === x.url) === i);
+
+/* ---------- Podcast search (Apple's public directory) ---------- */
+async function searchPodcasts(term){
+  const api = `https://itunes.apple.com/search?media=podcast&limit=36&term=${encodeURIComponent(term)}`;
+  let data;
+  try{ data = await jsonp(api); }
+  catch{ data = JSON.parse(await getText(api)); }
+  return data.results.filter(r => r.feedUrl).map(r => ({
+    url: r.feedUrl, title: r.collectionName, by: r.artistName, image: r.artworkUrl600 || r.artworkUrl100, genre: r.primaryGenreName, count: r.trackCount
+  }));
+}
+
+/* ---------- State ---------- */
+let subs = store.get("fx.subs", []);
+let current = null;      // feed on screen
+let playing = null;      // {item, feed}
+const feedCache = new Map();
+
+function saveSubs(){ store.set("fx.subs", subs); renderSubs(); }
+const isSub = url => subs.some(s => s.url === url);
+function toggleSub(feed){
+  if (isSub(feed.url)) subs = subs.filter(s => s.url !== feed.url);
+  else subs.unshift({url: feed.url, title: feed.title, image: feed.image});
+  saveSubs(); if (current?.url === feed.url) renderFeed(current);
+}
+
+/* ---------- Rendering ---------- */
+const CHIPS = ["News","Technology","Science","History","Comedy","True crime","Business","Football"];
+$("#chips").innerHTML = CHIPS.map(c => `<button class="chip" data-q="${esc(c)}">${esc(c)}</button>`).join("");
+$("#chips").addEventListener("click", e => { const q = e.target.dataset.q; if (q){ $("#q").value = q; go(q); } });
+
+function renderSubs(){
+  const el = $("#subs");
+  if (!subs.length){ el.innerHTML = `<p class="empty">Open a feed and press Subscribe to keep it here.</p>`; return; }
+  el.innerHTML = subs.map((s,i) => `<button class="sub ${current?.url===s.url?"on":""}" data-i="${i}">
+    ${s.image ? `<img src="${esc(s.image)}" alt="" loading="lazy">` : `<span class="thumb"></span>`}<b>${esc(s.title)}</b></button>`).join("");
+}
+$("#subs").addEventListener("click", e => { const b = e.target.closest(".sub"); if (b) openFeed(subs[b.dataset.i].url); });
+
+function status(msg, err){ return `<div class="status ${err?"err":""}"><span class="mascot">${mascotHTML()}</span>${esc(msg)}</div>`; }
+
+function renderCards(list, heading){
+  content.innerHTML = `<h2 class="section-h">${esc(heading)}</h2><div class="grid">${list.map((r,i) => `
+    <button class="card" data-i="${i}">
+      ${r.image ? `<img src="${esc(r.image)}" alt="" loading="lazy">` : `<div class="ph">RSS</div>`}
+      <div class="meta"><b>${esc(r.title || r.url)}</b><small>${esc(r.by || r.genre || new URL(r.url).hostname)}${r.count ? " · " + r.count + " episodes" : ""}</small></div>
+    </button>`).join("")}</div>`;
+  content.querySelectorAll(".card").forEach(c => c.onclick = () => openFeed(list[c.dataset.i].url, list[c.dataset.i].direct));
+}
+
+function fmtDate(d){ const t = new Date(d); return isNaN(t) ? "" : t.toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}); }
+function fmtDur(d){
+  if (!d) return ""; if (/^\d+$/.test(d)) { const s = +d; return s >= 3600 ? `${Math.floor(s/3600)}h ${Math.floor(s%3600/60)}m` : `${Math.round(s/60)} min`; }
+  return d;
+}
+const clock = s => { s = Math.max(0, Math.floor(s||0)); const h = Math.floor(s/3600), m = Math.floor(s%3600/60), x = String(s%60).padStart(2,"0"); return h ? `${h}:${String(m).padStart(2,"0")}:${x}` : `${m}:${x}`; };
+
+function renderFeed(feed){
+  current = feed; renderSubs();
+  const sub = isSub(feed.url);
+  const playable = feed.items.filter(i => i.kind).length;
+  content.innerHTML = `
+    <div class="feedhead">
+      ${feed.image ? `<img src="${esc(feed.image)}" alt="">` : ""}
+      <div class="t">
+        <h2>${esc(feed.title)}</h2>
+        ${feed.description ? `<p>${esc(feed.description.slice(0,280))}${feed.description.length>280?"…":""}</p>` : ""}
+        <div class="row">
+          <button class="btn ${sub?"":"primary"}" id="subBtn">${sub ? "Unsubscribe" : "Subscribe"}</button>
+          <button class="btn" id="copyBtn">Copy feed link</button>
+          ${feed.link ? `<a class="btn" href="${esc(feed.link)}" target="_blank" rel="noopener" style="text-decoration:none">Visit site</a>` : ""}
+        </div>
+        <div class="url">${esc(feed.url)} · ${feed.items.length} items, ${playable} playable</div>
+      </div>
+    </div>
+    <div id="stage" hidden></div>
+    <div class="eps">${feed.items.map((it,i) => {
+      const tag = it.kind === "youtube" ? `<span class="tag v">Video</span>` : it.kind === "video" ? `<span class="tag v">Video</span>` : it.kind === "audio" ? `<span class="tag">Audio</span>` : `<span class="tag">Article</span>`;
+      const img = it.image || feed.image;
+      const long = it.desc.length > 220;
+      return `<div class="ep" data-i="${i}">
+        ${img ? `<img class="thumb ${it.kind==="youtube"?"yt":""}" src="${esc(img)}" alt="" loading="lazy">` : `<span class="thumb"></span>`}
+        <div class="txt">
+          <h3>${esc(it.title || "Untitled")}</h3>
+          <div class="info">${tag}<span>${esc(fmtDate(it.date))}</span>${it.duration ? `<span>${esc(fmtDur(it.duration))}</span>` : ""}</div>
+          ${it.desc ? `<p data-full="${esc(it.desc)}">${esc(it.desc.slice(0,220))}${long?"… ":""}${long?`<button class="more">more</button>`:""}</p>` : ""}
+        </div>
+        ${it.kind ? `<button class="play" title="Play" aria-label="Play ${esc(it.title)}">▶</button>`
+                  : it.link ? `<a class="play" href="${esc(it.link)}" target="_blank" rel="noopener" title="Open article" style="text-decoration:none">↗</a>` : `<button class="play" disabled>–</button>`}
+      </div>`; }).join("")}</div>`;
+  $("#subBtn").onclick = () => toggleSub(feed);
+  $("#copyBtn").onclick = async e => { try{ await navigator.clipboard.writeText(feed.url); e.target.textContent = "Copied"; }catch{ e.target.textContent = "Copy failed"; } };
+  content.querySelectorAll(".ep").forEach(row => {
+    const it = feed.items[row.dataset.i];
+    row.querySelector("button.play:not([disabled])")?.addEventListener("click", () => play(it, feed));
+    row.querySelector(".more")?.addEventListener("click", e => { const p = e.target.parentElement; p.textContent = p.dataset.full; });
+  });
+}
+
+/* ---------- Actions ---------- */
+async function go(q){
+  q = q.trim(); if (!q) return;
+  const isUrl = /^https?:\/\//i.test(q) || /^[\w-]+(\.[\w-]+)+(\/|$)/.test(q);
+  content.innerHTML = status(isUrl ? "Looking for feeds on that site…" : `Searching podcasts for “${q}”…`);
+  try{
+    if (isUrl){
+      const found = await discover(q);
+      if (found.length === 1) return openFeed(found[0].url, found[0].direct);
+      renderCards(found, `${found.length} feeds found`);
+    } else {
+      const res = await searchPodcasts(q);
+      if (!res.length){ content.innerHTML = status(`No podcasts found for “${q}”. Try a different word.`); return; }
+      renderCards(res, `Podcasts matching “${q}”`);
+    }
+  }catch(e){ content.innerHTML = status(e.message, true); }
+}
+
+async function openFeed(url, direct){
+  content.innerHTML = status("Loading feed…");
+  try{
+    let feed = feedCache.get(url);
+    if (!feed){ feed = parseFeed(direct || await getText(url), url); feedCache.set(url, feed); }
+    const s = subs.find(x => x.url === url); if (s && (s.title !== feed.title || s.image !== feed.image)){ s.title = feed.title; s.image = feed.image; store.set("fx.subs", subs); }
+    renderFeed(feed); window.scrollTo({top:0, behavior:"smooth"});
+  }catch(e){ content.innerHTML = status(e.message, true); }
+}
+
+$("#searchForm").addEventListener("submit", e => { e.preventDefault(); go($("#q").value); });
+
+/* ---------- Playback ---------- */
+const positions = store.get("fx.pos", {});
+function play(it, feed){
+  const stage = $("#stage");
+  if (it.kind === "audio"){
+    if (stage){ stage.hidden = true; stage.innerHTML = ""; }
+    playing = {it, feed};
+    if (audio.src !== it.media){ audio.src = it.media; audio.currentTime = positions[it.media] || 0; }
+    audio.play().catch(() => {});
+    $("#player").hidden = false;
+    $("#npTitle").textContent = it.title; $("#npFeed").textContent = feed.title;
+    $("#npImg").src = it.image || feed.image || "";
+    return;
+  }
+  audio.pause();
+  if (!stage) return;
+  stage.hidden = false;
+  const media = it.kind === "youtube"
+    ? `<iframe src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(it.vid)}?autoplay=1" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>`
+    : `<video src="${esc(it.media)}" controls autoplay playsinline></video>`;
+  stage.innerHTML = media + `<div class="bar"><b style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(it.title)}</b><button class="btn" id="closeStage">Close</button></div>`;
+  $("#closeStage").onclick = () => { stage.hidden = true; stage.innerHTML = ""; };
+  stage.scrollIntoView({behavior:"smooth", block:"start"});
+}
+const seek = $("#seek");
+audio.addEventListener("loadedmetadata", () => { seek.max = Math.floor(audio.duration || 0); $("#dur").textContent = clock(audio.duration); });
+let lastSave = 0;
+audio.addEventListener("timeupdate", () => {
+  if (!seek.matches(":active")) seek.value = Math.floor(audio.currentTime);
+  $("#cur").textContent = clock(audio.currentTime);
+  if (Date.now() - lastSave > 5000 && audio.src){ positions[audio.src] = audio.currentTime; store.set("fx.pos", positions); lastSave = Date.now(); }
+});
+audio.addEventListener("play", () => $("#pp").textContent = "❚❚");
+audio.addEventListener("pause", () => $("#pp").textContent = "▶");
+audio.addEventListener("ended", () => { delete positions[audio.src]; store.set("fx.pos", positions); });
+audio.addEventListener("error", () => { $("#npFeed").textContent = "This episode's audio couldn't be loaded."; });
+seek.addEventListener("input", () => audio.currentTime = +seek.value);
+$("#pp").onclick = () => audio.paused ? audio.play() : audio.pause();
+$("#back").onclick = () => audio.currentTime -= 15;
+$("#fwd").onclick = () => audio.currentTime += 30;
+$("#speed").onchange = e => audio.playbackRate = +e.target.value;
+document.addEventListener("keydown", e => {
+  if (e.target.matches("input,select,textarea") || $("#player").hidden) return;
+  if (e.code === "Space"){ e.preventDefault(); $("#pp").click(); }
+});
+
+/* ---------- Puppet Space: live audio room on LiveKit ----------
+   Roles live on the server: the pass function decides who can speak, and the room enforces it. */
+const SPACE_API = "/api/space";
+const LIVEKIT_JS = "https://unpkg.com/livekit-client@2.23.0/dist/livekit-client.umd.js";
+const ROLE_LABEL = {host:"Host", cohost:"Co-host", speaker:"Speaker", listener:"Listener"};
+let room = null, LK = null;
+const sp = {joined:false, joining:false, token:"", hands:{}, error:"", note:"", editing:false, busy:false};
+
+function loadLiveKit(){
+  if (window.LivekitClient) return Promise.resolve(window.LivekitClient);
+  return new Promise((res, rej) => {
+    const s = document.createElement("script"); s.src = LIVEKIT_JS;
+    s.onload = () => window.LivekitClient ? res(window.LivekitClient) : rej(new Error("Voice chat didn't load."));
+    s.onerror = () => rej(new Error("Couldn't load voice chat. Check your connection, or turn off browser shields for this site."));
+    document.head.appendChild(s);
+  });
+}
+
+async function api(action, extra = {}){
+  if (location.protocol === "file:") throw new Error("The Space only works on the hosted site, not from a downloaded file.");
+  const res = await fetch(SPACE_API, {method:"POST", headers:{"content-type":"application/json"}, body: JSON.stringify({action, token: sp.token, ...extra})});
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || (res.status === 404 ? "The Space isn't set up on this site yet." : "Something went wrong. Try again."));
+  return data;
+}
+
+const everyone = () => room ? [room.localParticipant, ...room.remoteParticipants.values()] : [];
+const roleOf = p => { try{ const r = JSON.parse(p?.metadata || "{}").role; return ROLE_LABEL[r] ? r : "listener"; }catch{ return "listener"; } };
+const me = () => room?.localParticipant;
+const myRole = () => roleOf(me());
+const canManage = p => ["host","cohost"].includes(roleOf(p));
+const canSpeak = p => roleOf(p) !== "listener";
+const hostHere = () => everyone().some(p => roleOf(p) === "host");
+const roomTitle = () => { try{ return String(JSON.parse(room?.metadata || "{}").title || ""); }catch{ return ""; } };
+const byId = id => everyone().find(p => p.identity === id);
+
+async function joinSpace(name, password){
+  sp.joining = true; sp.error = ""; renderSpace();
+  try{
+    const pass = await api("join", {name, password: password || undefined});
+    LK = await loadLiveKit();
+    room = new LK.Room({audioCaptureDefaults:{echoCancellation:true, noiseSuppression:true, autoGainControl:true}});
+    const E = LK.RoomEvent;
+    room.on(E.TrackSubscribed, (track) => { if (track.kind === "audio"){ const el = track.attach(); el.hidden = true; document.body.appendChild(el); } });
+    room.on(E.TrackUnsubscribed, (track) => { track.detach().forEach(el => el.remove()); });
+    [E.ParticipantConnected, E.TrackMuted, E.TrackUnmuted, E.LocalTrackPublished, E.LocalTrackUnpublished, E.TrackPublished, E.TrackUnpublished, E.ActiveSpeakersChanged, E.RoomMetadataChanged, E.AudioPlaybackStatusChanged]
+      .forEach(ev => room.on(ev, renderSpace));
+    room.on(E.ParticipantDisconnected, p => { delete sp.hands[p.identity]; renderSpace(); });
+    room.on(E.ParticipantMetadataChanged, (_m, p) => {
+      if (canSpeak(p)) delete sp.hands[p.identity];
+      if (p === me()){
+        if (canSpeak(p)) note(`You're now ${ROLE_LABEL[roleOf(p)].toLowerCase()}. Press Unmute to talk.`);
+        else note("You're back with the listeners.");
+      }
+      renderSpace();
+    });
+    room.on(E.DataReceived, (payload, p) => {
+      if (!p) return;
+      let d; try{ d = JSON.parse(new TextDecoder().decode(payload)); }catch{ return; }
+      if (d.type === "hand"){ if (d.up && !canSpeak(p)) sp.hands[p.identity] = Date.now(); else delete sp.hands[p.identity]; renderSpace(); }
+      else if (d.type === "decline" && canManage(p)){
+        delete sp.hands[d.id];
+        if (d.id === me().identity) note("Your request to speak was declined this time.");
+        renderSpace();
+      }
+      else if (d.type === "hello" && canManage(me())) send({type:"hands", hands: sp.hands}, [p.identity]);
+      else if (d.type === "hands" && canManage(p)){
+        for (const [k, v] of Object.entries(d.hands || {})) if (typeof v === "number" && byId(k) && !canSpeak(byId(k))) sp.hands[k] = v;
+        renderSpace();
+      }
+    });
+    room.on(E.Disconnected, reason => {
+      const removed = reason === LK.DisconnectReason?.PARTICIPANT_REMOVED;
+      cleanupSpace(removed ? "The host removed you from the Space." : "");
+    });
+    await room.connect(pass.url, pass.token);
+    sp.token = pass.token; sp.joined = true;
+    send({type:"hello"});
+  }catch(e){
+    sp.error = e?.message || "Couldn't join the Space.";
+    try{ await room?.disconnect(); }catch{} room = null;
+  }
+  sp.joining = false; renderSpace();
+}
+
+function send(obj, to){
+  try{ me()?.publishData(new TextEncoder().encode(JSON.stringify(obj)), to ? {reliable:true, destinationIdentities: to} : {reliable:true}); }catch{}
+}
+function cleanupSpace(msg = ""){
+  document.querySelectorAll("body > audio").forEach(el => { if (el.srcObject) el.remove(); });
+  room = null; Object.assign(sp, {joined:false, joining:false, token:"", hands:{}, editing:false, busy:false, error: msg});
+  renderSpace();
+}
+async function leaveSpace(){ try{ await room?.disconnect(); }catch{} cleanupSpace(); }
+
+async function setMic(on){
+  if (!room || !canSpeak(me())) return;
+  try{ await me().setMicrophoneEnabled(on); }
+  catch{ note("Your microphone is blocked. Allow microphone access from the icon in your browser's address bar, then try again."); }
+  renderSpace();
+}
+async function act(action, extra, done){
+  if (sp.busy) return; sp.busy = true; renderSpace();
+  try{ await api(action, extra); if (done) note(done); }
+  catch(e){ note(e.message); }
+  sp.busy = false; renderSpace();
+}
+function raiseHand(up){
+  const id = me().identity;
+  if (up) sp.hands[id] = Date.now(); else delete sp.hands[id];
+  send({type:"hand", up}); renderSpace();
+}
+function note(msg){ sp.note = msg; renderSpace(); setTimeout(() => { if (sp.note === msg){ sp.note = ""; renderSpace(); } }, 7000); }
+const inviteLink = () => location.href.split("#")[0] + "#space";
+
+function actionsFor(p){
+  if (p === me()) return [];
+  const mine = myRole(), them = roleOf(p), id = p.identity;
+  const A = (a, label) => `<button class="mini" data-act="${a}" data-id="${esc(id)}">${label}</button>`;
+  const talking = p.isMicrophoneEnabled;
+  if (mine === "host" && them !== "host"){
+    if (them === "cohost") return [A("role:host","Make host"), A("role:speaker","Remove co-host"), talking && A("mute","Mute"), A("role:listener","Move to listeners"), A("remove","Remove")].filter(Boolean);
+    if (them === "speaker") return [A("role:cohost","Make co-host"), talking && A("mute","Mute"), A("role:listener","Move to listeners"), A("remove","Remove")].filter(Boolean);
+    return [A("role:speaker","Invite to speak"), A("role:cohost","Make co-host"), A("remove","Remove")];
+  }
+  if (mine === "cohost"){
+    if (them === "speaker") return [talking && A("mute","Mute"), A("role:listener","Move to listeners")].filter(Boolean);
+    if (them === "listener") return [A("role:speaker","Invite to speak")];
+  }
+  return [];
+}
+
+function avatar(name, big){ return `<span class="av ${big ? "big" : ""}">${esc((name || "?").charAt(0).toUpperCase())}</span>`; }
+const manageMenu = (p, acts) => acts.length ? `<details class="manage" data-for="${esc(p.identity)}"><summary>Manage</summary><div class="acts">${acts.join("")}</div></details>` : "";
+
+function renderSpace(){
+  $("#partyBtn").classList.toggle("on", !!(room && sp.joined));
+  const box = $("#partyBox");
+  if (!room || !sp.joined){
+    const saved = store.get("fx.name", "");
+    box.innerHTML = `
+      <h2>Puppet Space</h2>
+      <p>A live audio room for the community. Anyone can join and listen. The host and co-hosts bring people up on stage to speak, and listeners can request to speak.</p>
+      <form class="party-row" id="joinForm">
+        <input id="partyName" maxlength="40" placeholder="Your name" value="${esc(saved)}" required>
+        <button class="btn primary" type="submit" ${sp.joining ? "disabled" : ""}>${sp.joining ? "Joining…" : "Join the Space"}</button>
+        <button class="btn" type="button" id="hidePartyBtn">Close</button>
+      </form>
+      <details class="host-login"><summary>I'm a host</summary>
+        <div class="party-row"><input id="hostPass" type="password" placeholder="Host password" autocomplete="current-password"></div>
+      </details>
+      ${sp.error ? `<p class="party-err">${esc(sp.error)}</p>` : ""}`;
+    $("#joinForm").onsubmit = e => { e.preventDefault(); const n = $("#partyName").value.trim(); if (!n) return; store.set("fx.name", n); joinSpace(n, $("#hostPass").value); };
+    $("#hidePartyBtn").onclick = () => { $("#party").hidden = true; };
+    return;
+  }
+  const draft = sp.editing ? ($("#titleInput")?.value ?? roomTitle()) : null;
+  const openMenus = [...box.querySelectorAll("details.manage[open]")].map(d => d.dataset.for);
+
+  const all = everyone();
+  const order = {host:0, cohost:1, speaker:2};
+  const nm = p => p.name || "Guest";
+  const stage = all.filter(canSpeak).sort((a,b) => order[roleOf(a)] - order[roleOf(b)] || nm(a).localeCompare(nm(b)));
+  const listeners = all.filter(p => !canSpeak(p)).sort((a,b) => (!!sp.hands[b.identity]) - (!!sp.hands[a.identity]) || nm(a).localeCompare(nm(b)));
+  const requests = listeners.filter(p => sp.hands[p.identity]).sort((a,b) => sp.hands[a.identity] - sp.hands[b.identity]);
+  const manager = canManage(me());
+  const mineRole = myRole();
+
+  const stageHTML = stage.map(p => {
+    const on = p.isMicrophoneEnabled;
+    return `<div class="speaker ${p.isSpeaking && on ? "speaking" : ""}">
+      ${avatar(nm(p), true)}
+      <b>${esc(nm(p))}${p === me() ? " (you)" : ""}</b>
+      <span class="tag ${roleOf(p) !== "speaker" ? "v" : ""}">${ROLE_LABEL[roleOf(p)]}</span>
+      <small class="${on ? "" : "mic-off"}">${on ? "mic on" : "muted"}</small>
+      ${manageMenu(p, actionsFor(p))}
+    </div>`; }).join("") || `<p class="empty">Nobody on stage yet.</p>`;
+
+  const reqHTML = manager && requests.length ? `
+    <h3 class="section-h">Requests to speak (${requests.length})</h3>
+    <div class="people">${requests.map(p => `<div class="person hand">${avatar(nm(p))}<span>${esc(nm(p))}</span>
+      <button class="mini go" data-act="role:speaker" data-id="${esc(p.identity)}">Let speak</button>
+      <button class="mini" data-act="decline" data-id="${esc(p.identity)}">Decline</button></div>`).join("")}</div>` : "";
+
+  const listenHTML = listeners.map(p => `<div class="person ${sp.hands[p.identity] ? "hand" : ""}">${avatar(nm(p))}
+      <span>${esc(nm(p))}${p === me() ? " (you)" : ""}</span>
+      ${sp.hands[p.identity] ? `<small>hand raised</small>` : ""}
+      ${manageMenu(p, actionsFor(p))}</div>`).join("") || `<p class="empty">No listeners yet.</p>`;
+
+  let mine = "";
+  if (canSpeak(me())){
+    const on = me().isMicrophoneEnabled;
+    mine = `<button class="btn ${on ? "on" : ""}" id="micBtn">${on ? "Mute" : "Unmute"}</button>
+      <button class="btn" id="downBtn">${mineRole === "host" ? "Step down to co-host" : "Leave the stage"}</button>`;
+  } else {
+    mine = `<button class="btn ${sp.hands[me().identity] ? "on" : "primary"}" id="handBtn">${sp.hands[me().identity] ? "Lower hand" : "Request to speak"}</button>`;
+  }
+
+  const title = roomTitle();
+  const titleHTML = sp.editing
+    ? `<form class="party-row" id="titleForm"><input id="titleInput" maxlength="80" placeholder="What's this Space about?"><button class="btn primary" type="submit">Save</button><button class="btn" type="button" id="cancelTitle">Cancel</button></form>`
+    : `<h2>${esc(title || (hostHere() ? "Puppet Space" : "Waiting for the host"))}</h2>${manager ? `<button class="mini" id="editTitle">Edit title</button>` : ""}`;
+
+  box.innerHTML = `
+    <div class="party-top">
+      <div class="sp-title">
+        <span class="live"><span class="live-dot"></span>${hostHere() ? "Live" : "Open"}</span>
+        <div class="party-row">${titleHTML}</div>
+        <small class="count">${all.length} in the Space · ${stage.length} on stage · ${listeners.length} listening</small>
+      </div>
+      <div class="party-row">${mine}
+        <button class="btn" id="inviteBtn">Copy invite link</button>
+        <button class="btn danger" id="leaveBtn">Leave</button>
+      </div>
+    </div>
+    ${room.canPlaybackAudio === false ? `<div class="sync">Your browser paused the sound. <button class="btn primary" id="audioBtn">Turn on sound</button></div>` : ""}
+    ${hostHere() ? "" : `<div class="sync">The host hasn't arrived yet. Hosts join using the host password.</div>`}
+    <h3 class="section-h">On stage</h3>
+    <div class="stage">${stageHTML}</div>
+    ${reqHTML}
+    <h3 class="section-h">Listening (${listeners.length})</h3>
+    <div class="people">${listenHTML}</div>
+    ${sp.note ? `<p class="party-err">${esc(sp.note)}</p>` : ""}`;
+
+  box.querySelectorAll("details.manage").forEach(d => { if (openMenus.includes(d.dataset.for)) d.open = true; });
+  if (sp.busy) box.querySelectorAll("[data-act]").forEach(b => b.disabled = true);
+  if (sp.editing){ const i = $("#titleInput"); i.value = draft; i.focus(); i.setSelectionRange(i.value.length, i.value.length); }
+  $("#titleForm")?.addEventListener("submit", e => { e.preventDefault(); const t = $("#titleInput").value; sp.editing = false; act("setTitle", {title: t}); });
+  $("#cancelTitle")?.addEventListener("click", () => { sp.editing = false; renderSpace(); });
+  $("#editTitle")?.addEventListener("click", () => { sp.editing = true; renderSpace(); $("#titleInput").value = roomTitle(); });
+  $("#micBtn")?.addEventListener("click", () => setMic(!me().isMicrophoneEnabled));
+  $("#downBtn")?.addEventListener("click", async () => {
+    await me().setMicrophoneEnabled(false).catch(() => {});
+    act("setRole", {target: me().identity, role: mineRole === "host" ? "cohost" : "listener"});
+  });
+  $("#handBtn")?.addEventListener("click", () => raiseHand(!sp.hands[me().identity]));
+  $("#audioBtn")?.addEventListener("click", () => room.startAudio().then(renderSpace).catch(() => {}));
+  $("#leaveBtn").onclick = leaveSpace;
+  $("#inviteBtn").onclick = async e => {
+    try{ await navigator.clipboard.writeText(inviteLink()); e.target.textContent = "Copied"; }catch{ note(inviteLink()); }
+  };
+}
+
+$("#partyBox").addEventListener("click", e => {
+  const b = e.target.closest("[data-act]"); if (!b) return;
+  b.closest("details")?.removeAttribute("open");
+  const id = b.dataset.id, a = b.dataset.act, who = byId(id)?.name || "them";
+  if (a.startsWith("role:")){
+    const r = a.slice(5);
+    delete sp.hands[id];
+    act("setRole", {target:id, role:r}, r === "listener" ? `Moved ${who} to the listeners.` : `${who} is now ${ROLE_LABEL[r].toLowerCase()}.`);
+  }
+  else if (a === "mute") act("mute", {target:id}, `Muted ${who}.`);
+  else if (a === "remove") act("remove", {target:id}, `Removed ${who}.`);
+  else if (a === "decline"){ delete sp.hands[id]; send({type:"decline", id}); renderSpace(); }
+});
+$("#partyBtn").onclick = () => { const p = $("#party"); p.hidden = !p.hidden; if (!p.hidden){ renderSpace(); p.scrollIntoView({behavior:"smooth", block:"nearest"}); } };
+window.addEventListener("beforeunload", () => { try{ room?.disconnect(); }catch{} });
+if (location.hash === "#space" || location.hash === "#party"){ $("#party").hidden = false; renderSpace(); }
+/* ---------- Start in a working state ---------- */
+renderSubs();
+if (subs.length) openFeed(subs[0].url);
+else { $("#q").value = "Technology"; go("Technology"); }
+</script>
+</body>
+</html>
