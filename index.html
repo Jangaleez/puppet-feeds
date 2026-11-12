@@ -3,149 +3,131 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Puppet Feeds</title>
+<title>Puppet Space</title>
+<meta name="description" content="Puppet Space - a live audio room for the Bitcoin Puppets community.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gochi+Hand&family=Comic+Neue:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
-/* Layout: tuner header with one smart search box, subscriptions rail on the left, results/feed in the main column, a transport bar pinned to the bottom. */
-:root{
-  --bg:#f3f4f7; --panel:#ffffff; --ink:#151a24; --muted:#5d6577; --line:#dde1ea;
-  --accent:#d9730d; --accent-ink:#ffffff; --chip:#e9ecf3; --bad:#b3261e;
-  --display:"Familjen Grotesk",system-ui,sans-serif;
-  --body:"IBM Plex Sans",system-ui,sans-serif;
-  --mono:"IBM Plex Mono",ui-monospace,monospace;
-  color-scheme:light;
-}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#10131a; --panel:#181c26; --ink:#e7e9ef; --muted:#9aa2b4; --line:#2a3040;
-  --accent:#f0913a; --accent-ink:#1a1206; --chip:#232838; --bad:#ff8a80; color-scheme:dark}}
-:root[data-theme="dark"]{
-  --bg:#10131a; --panel:#181c26; --ink:#e7e9ef; --muted:#9aa2b4; --line:#2a3040;
-  --accent:#f0913a; --accent-ink:#1a1206; --chip:#232838; --bad:#ff8a80; color-scheme:dark}
-
-*{box-sizing:border-box}
-html,body{margin:0}
-body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--body);padding-bottom:110px}
-button,input,select{font:inherit;color:inherit}
-button{cursor:pointer}
-:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
-
-header{border-bottom:1px solid var(--line);background:var(--panel)}
-header .wrap{padding-block:18px;display:flex;flex-direction:column;gap:12px}
-.brand{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
-.brand h1{font:700 26px/1 var(--display);margin:0;letter-spacing:-.01em}
-.brand span{color:var(--muted);font-size:13px}
-form.search{display:flex;gap:8px}
-form.search input{flex:1;min-width:0;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
-.btn{border:1px solid var(--line);background:var(--chip);border-radius:10px;padding:10px 14px;font-weight:600}
-.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
-.chips{display:flex;gap:6px;flex-wrap:wrap}
-.chip{border:0;background:var(--chip);border-radius:999px;padding:5px 12px;font-size:13px}
-.chip:hover{background:var(--line)}
-
-main .wrap{display:grid;grid-template-columns:260px 1fr;gap:24px;padding-block:24px}
-@media (max-width:820px){main .wrap{grid-template-columns:1fr}}
-aside h2,.section-h{font:600 12px/1 var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
-.subs{display:flex;flex-direction:column;gap:2px}
-.sub{display:flex;align-items:center;gap:10px;padding:8px;border-radius:8px;border:0;background:none;text-align:left;width:100%}
-.sub:hover,.sub.on{background:var(--chip)}
-.sub img,.thumb{width:36px;height:36px;border-radius:6px;object-fit:cover;background:var(--chip);flex:none}
-.sub b{font-weight:500;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
-.empty{color:var(--muted);font-size:14px}
-.content{min-width:0}
-
-.status{padding:12px 14px;border-radius:10px;background:var(--chip);color:var(--muted);font-size:14px;margin-bottom:16px}
-.status.err{color:var(--bad)}
-
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:16px}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;text-align:left;padding:0}
-.card:hover{border-color:var(--accent)}
-.card img{width:100%;aspect-ratio:1;object-fit:cover;background:var(--chip);display:block;max-width:100%}
-.card .ph{width:100%;aspect-ratio:1;background:var(--chip);display:grid;place-items:center;font:700 30px var(--display);color:var(--muted)}
-.card div.meta{padding:10px 12px 12px;display:flex;flex-direction:column;gap:2px}
-.card b{font-weight:600;font-size:14px;line-height:1.3}
-.card small{color:var(--muted);font-size:12px}
-
-.feedhead{display:flex;gap:18px;align-items:flex-start;margin-bottom:20px;flex-wrap:wrap}
-.feedhead img{width:120px;height:120px;border-radius:12px;object-fit:cover;background:var(--chip)}
-.feedhead .t{flex:1;min-width:220px}
-.feedhead h2{font:700 28px/1.1 var(--display);margin:0 0 6px;text-wrap:balance}
-.feedhead p{margin:0 0 12px;color:var(--muted);max-width:65ch}
-.feedhead .row{display:flex;gap:8px;flex-wrap:wrap}
-.url{font:12px var(--mono);color:var(--muted);word-break:break-all;margin-top:8px}
-
-#stage{margin-bottom:20px;background:#000;border-radius:12px;overflow:hidden}
-#stage video,#stage iframe{display:block;width:100%;aspect-ratio:16/9;border:0;max-width:100%}
-#stage .bar{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 12px;background:var(--panel);border:1px solid var(--line);border-top:0;border-radius:0 0 12px 12px}
-
-.eps{display:flex;flex-direction:column;border-top:1px solid var(--line)}
-.ep{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:start;padding:14px 0;border-bottom:1px solid var(--line)}
-.ep .thumb{width:64px;height:64px}
-.ep .yt{width:112px;height:63px}
-.ep h3{margin:0 0 3px;font-size:15px;font-weight:600;line-height:1.35}
-.ep .info{font:12px var(--mono);color:var(--muted);display:flex;gap:10px;flex-wrap:wrap}
-.ep p{margin:6px 0 0;color:var(--muted);font-size:14px;max-width:70ch;overflow-wrap:anywhere}
-.ep .txt{min-width:0}
-.tag{font:500 11px var(--mono);text-transform:uppercase;letter-spacing:.06em;padding:1px 6px;border-radius:4px;background:var(--chip);color:var(--ink)}
-.tag.v{background:var(--accent);color:var(--accent-ink)}
-.play{width:44px;height:44px;border-radius:50%;border:0;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center}
-.play:disabled{background:var(--chip);color:var(--muted);cursor:default}
-.more{border:0;background:none;color:var(--accent);padding:0;font-size:13px}
-@media (max-width:520px){.ep{grid-template-columns:1fr auto}.ep .thumb,.ep .yt{display:none}}
-
-#player{position:fixed;left:0;right:0;bottom:0;background:var(--panel);border-top:1px solid var(--line);z-index:5;padding-bottom:env(safe-area-inset-bottom,0px)}
-#player .wrap{padding-block:12px;display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center}
-#player .np{display:flex;gap:10px;align-items:center;min-width:0}
-#player .np img{width:48px;height:48px;border-radius:6px;object-fit:cover;background:var(--chip)}
-#player .np b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#player .np small{color:var(--muted);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
-.npt{min-width:0}
-.transport{display:flex;align-items:center;gap:8px}
-.transport button{border:0;background:var(--chip);border-radius:8px;padding:6px 9px;font:500 12px var(--mono)}
-.transport .pp{background:var(--accent);color:var(--accent-ink);width:40px;height:40px;border-radius:50%;font-size:16px}
-.seek{display:flex;align-items:center;gap:8px;font:12px var(--mono);color:var(--muted);font-variant-numeric:tabular-nums}
-.seek input{flex:1;accent-color:var(--accent);min-width:60px}
-#speed{background:var(--chip);border:0;border-radius:8px;padding:6px;font:12px var(--mono)}
-@media (max-width:760px){#player .wrap{grid-template-columns:1fr auto}.seek{grid-column:1/-1;order:3}}
-@media (prefers-reduced-motion:reduce){*{transition:none!important}}
-
-/* ===== Paint-program theme: thick wobbly outlines, hard shadows, Bitcoin orange ===== */
+/* Layout: header with topic toggles, the briefing in the main column, the merged news list beside it. */
 :root{
   --bg:#fffdf6; --panel:#ffffff; --ink:#111111; --muted:#4a4a4a; --line:#111111;
-  --accent:#f7931a; --accent-ink:#111111; --chip:#ffe14d; --sky:#7fd3ff; --bad:#d4130f;
+  --accent:#f7931a; --accent-ink:#111111; --chip:#ffe14d; --sky:#7fd3ff; --bad:#d4130f; --good:#1f8a3b;
   --stroke:#111111; --shadow:#111111; --dots:#e9e2cf;
   --display:"Gochi Hand","Comic Sans MS","Comic Neue",cursive;
   --body:"Comic Neue","Comic Sans MS",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,monospace;
   --wobble:255px 18px 225px 18px/18px 225px 18px 255px;
   --wobble2:18px 225px 18px 255px/255px 18px 225px 18px;
+  color-scheme:light;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:#15130f; --panel:#1f1c16; --ink:#fff8e6; --muted:#d6ccb4; --line:#fff8e6;
-  --accent:#f7931a; --accent-ink:#111111; --chip:#ffd21f; --sky:#4fb8ec; --bad:#ff7a6e;
+  --accent:#f7931a; --accent-ink:#111111; --chip:#ffd21f; --sky:#4fb8ec; --bad:#ff7a6e; --good:#6fdc8c;
   --stroke:#fff8e6; --shadow:#f7931a; --dots:#2a261d; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#15130f; --panel:#1f1c16; --ink:#fff8e6; --muted:#d6ccb4; --line:#fff8e6;
-  --accent:#f7931a; --accent-ink:#111111; --chip:#ffd21f; --sky:#4fb8ec; --bad:#ff7a6e;
+  --accent:#f7931a; --accent-ink:#111111; --chip:#ffd21f; --sky:#4fb8ec; --bad:#ff7a6e; --good:#6fdc8c;
   --stroke:#fff8e6; --shadow:#f7931a; --dots:#2a261d; color-scheme:dark}
 
-body{background:var(--bg) radial-gradient(var(--dots) 1.5px,transparent 1.6px) 0 0/22px 22px;font-size:16px}
-header{background:var(--accent);border-bottom:4px solid var(--stroke)}
-.brand h1{font:400 44px/1 var(--display);color:#111;transform:rotate(-1.5deg);letter-spacing:0}
-.brand{align-items:center}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg) radial-gradient(var(--dots) 1.5px,transparent 1.6px) 0 0/22px 22px;color:var(--ink);font:16px/1.5 var(--body)}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+a{color:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+header{background:var(--accent);border-bottom:4px solid var(--stroke);color:#111}
+header .wrap{padding-block:18px;display:flex;flex-direction:column;gap:14px}
+.brand{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.brand h1{font:400 44px/1 var(--display);margin:0;transform:rotate(-1.5deg)}
+.brand span{font-weight:700;font-size:14px}
 .mascot{width:76px;height:76px;flex:none;display:block;animation:bob 2.6s ease-in-out infinite;transform-origin:50% 100%}
-.mascot img,.mascot svg{width:100%;height:100%;object-fit:contain;display:block}
+.mascot img,.mascot svg{width:100%;height:100%;object-fit:cover;display:block}
 @keyframes bob{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(6deg) translateY(-3px)}}
 header .mascot{border:3px solid #111;border-radius:var(--wobble);box-shadow:4px 4px 0 #111;overflow:hidden;width:84px;height:84px}
-.mascot img{object-fit:cover}
-.status .mascot{border:2px solid var(--stroke);border-radius:var(--wobble2);overflow:hidden}
-.status{display:flex;align-items:center;gap:12px}
-.status .mascot{width:54px;height:54px}
-footer{border-top:3px dashed var(--stroke);margin-top:12px}
+
+.btn{border:3px solid var(--stroke);background:var(--chip);color:#111;border-radius:var(--wobble2);box-shadow:3px 3px 0 var(--shadow);font:400 19px var(--display);padding:6px 16px;transition:transform .08s}
+.btn:hover{transform:translate(-1px,-1px) rotate(-1deg)}
+.btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--shadow)}
+.btn:disabled{opacity:.6;cursor:default;transform:none}
+.btn.primary{background:var(--accent);color:#111}
+header .btn.primary{background:#fff;color:#111;border-color:#111;box-shadow:3px 3px 0 #111}
+.tag{font:500 11px var(--mono);text-transform:uppercase;letter-spacing:.06em;padding:1px 6px;border-radius:4px;border:2px solid var(--stroke);background:var(--sky);color:#111;white-space:nowrap}
+.tag.v{background:var(--accent);color:#111}
+.empty{color:var(--muted);font-size:14px}
+.section-h{font:400 26px/1 var(--display);color:var(--ink);transform:rotate(-1deg);margin:0 0 12px}
+
+/* topic toggles */
+.topicbar{display:flex;flex-direction:column;gap:8px}
+.topicbar .hint{font-weight:700;font-size:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:baseline}
+.topics{display:flex;gap:8px;flex-wrap:wrap}
+.topic{border:2px solid #111;background:#fff;color:#111;font-weight:700;font-size:14px;border-radius:var(--wobble);box-shadow:2px 2px 0 #111;padding:6px 12px;display:inline-flex;gap:6px;align-items:center}
+.topic[aria-pressed="true"]{background:#111;color:#fff;box-shadow:2px 2px 0 #fff}
+.topic[aria-pressed="true"]::after{content:"✓";font-size:12px}
+.topic:disabled{opacity:.45;cursor:not-allowed}
+.topic:not(:disabled):active{transform:translate(2px,2px);box-shadow:none}
+
+main .wrap{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:28px;padding-block:24px 40px;align-items:start}
+@media (max-width:900px){main .wrap{grid-template-columns:1fr}}
+
+.panel{background:var(--panel);border:3px solid var(--stroke);border-radius:var(--wobble);box-shadow:6px 6px 0 var(--shadow);padding:20px}
+.status{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--panel);border:3px dashed var(--stroke);border-radius:var(--wobble);font-weight:700}
+.status .mascot{width:54px;height:54px;border:2px solid var(--stroke);border-radius:var(--wobble2);overflow:hidden}
+.status.err{color:var(--bad)}
+
+/* briefing */
+.brief-meta{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font:12px var(--mono);color:var(--muted);margin-bottom:10px}
+.brief h2{font:400 40px/1.05 var(--display);margin:0 0 12px;text-wrap:balance}
+.overview{font-size:18px;margin:0 0 16px}
+.prices{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.price{font:500 13px var(--mono);border:2px solid var(--stroke);border-radius:var(--wobble2);padding:3px 10px;background:var(--bg)}
+.up{color:var(--good)} .down{color:var(--bad)}
+.moods{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;margin-bottom:22px}
+.mood{border:2px solid var(--stroke);border-radius:var(--wobble2);padding:8px 10px;background:var(--bg);font-size:14px}
+.mood b{display:flex;justify-content:space-between;gap:6px;margin-bottom:2px}
+.tone{font:500 11px var(--mono);text-transform:uppercase;padding:1px 6px;border-radius:4px;border:2px solid var(--stroke)}
+.tone.positive{background:#b7f5c8;color:#111} .tone.negative{background:#ffb4ab;color:#111}
+.tone.mixed{background:var(--chip);color:#111} .tone.quiet{background:var(--panel)}
+.brief h3{font:400 28px/1 var(--display);margin:24px 0 12px;transform:rotate(-1deg)}
+.thread,.scenario{border-top:2px dashed var(--stroke);padding:12px 0}
+.thread h4,.scenario h4{margin:0 0 4px;font-size:17px;line-height:1.3}
+.thread p,.scenario p{margin:0 0 6px}
+.tags{display:flex;gap:5px;flex-wrap:wrap;align-items:center;margin-top:6px}
+.ref{font:500 11px var(--mono);text-decoration:none;border:1.5px solid var(--stroke);border-radius:4px;padding:0 4px;background:var(--bg)}
+.ref:hover{background:var(--chip);color:#111}
+.lik{font:500 11px var(--mono);text-transform:uppercase;padding:1px 6px;border:2px solid var(--stroke);border-radius:4px}
+.lik.high{background:var(--accent);color:#111} .lik.medium{background:var(--chip);color:#111} .lik.low{background:var(--panel)}
+.scenario .when{font:12px var(--mono);color:var(--muted)}
+.signals{margin:4px 0 0;padding-left:20px;font-size:14px;color:var(--muted)}
+.upcoming{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.upcoming li{display:flex;gap:10px}
+.upcoming b{font:500 12px var(--mono);min-width:92px;padding-top:3px}
+.disclaimer{margin:22px 0 0;font-size:13px;color:var(--muted);border-top:3px dashed var(--stroke);padding-top:10px}
+.skeleton{height:14px;border-radius:6px;background:linear-gradient(90deg,var(--dots),var(--panel),var(--dots));background-size:200% 100%;animation:shimmer 1.4s infinite;margin:10px 0}
+@keyframes shimmer{to{background-position:-200% 0}}
+
+/* news list */
+.feedbar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.filt{border:2px solid var(--stroke);background:var(--panel);border-radius:var(--wobble2);padding:2px 10px;font:700 13px var(--body);box-shadow:2px 2px 0 var(--shadow)}
+.filt[aria-pressed="true"]{background:var(--chip);color:#111}
+.stories{display:flex;flex-direction:column}
+.story{padding:11px 0;border-top:2px dashed var(--stroke)}
+.story a.t{font-weight:700;text-decoration:none;line-height:1.35;display:block}
+.story a.t:hover{text-decoration:underline wavy var(--accent)}
+.story .info{font:12px var(--mono);color:var(--muted);display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;align-items:center}
+.story.x a.t::before{content:"⇄ ";color:var(--accent)}
+.story.hi{background:var(--chip);color:#111;margin:0 -8px;padding-inline:8px;border-radius:8px}
+.story.hi .info{color:#111}
+.more-btn{margin-top:12px}
+
+footer{border-top:3px dashed var(--stroke)}
 footer .wrap{padding-block:16px;font-size:13px;color:var(--muted)}
 footer b{color:var(--ink)}
-@media (prefers-reduced-motion:reduce){.mascot{animation:none}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 
+/* ===== Puppet Space ===== */
 /* ===== Listening party ===== */
 .party-open{margin-left:auto;display:inline-flex;align-items:center;gap:8px;background:#fff;color:#111;border-color:#111;box-shadow:3px 3px 0 #111}
 .live-dot{width:10px;height:10px;border-radius:50%;background:#999;border:2px solid #111}
@@ -197,97 +179,24 @@ footer b{color:var(--ink)}
 .person{flex-wrap:wrap}
 .host-login summary{cursor:pointer;font-weight:700;font-size:14px;color:var(--muted);width:max-content}
 .host-login .party-row{margin-top:8px}
-.brand span{color:#111;font-weight:700}
-form.search input{background:#fff;color:#111;border:3px solid #111;border-radius:var(--wobble);box-shadow:4px 4px 0 #111;padding:12px 16px}
-.btn{border:3px solid var(--stroke);border-radius:var(--wobble2);box-shadow:3px 3px 0 var(--shadow);font-family:var(--display);font-size:19px;padding:6px 16px;transition:transform .08s}
-.btn:hover{transform:translate(-1px,-1px) rotate(-1deg)}
-.btn:active,.chip:active,.card:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--shadow)}
-header .btn.primary{background:#fff;color:#111;border-color:#111;box-shadow:3px 3px 0 #111}
-.chip{border:2px solid #111;background:#fff;color:#111;font-weight:700;border-radius:var(--wobble);box-shadow:2px 2px 0 #111}
-.chip:nth-child(3n+1){background:var(--chip);color:#111}
-.chip:nth-child(3n+2){background:var(--sky);color:#111}
-.chip:hover{background:#111;color:#fff}
-
-aside h2,.section-h{font:400 24px/1 var(--display);letter-spacing:0;text-transform:none;color:var(--ink);transform:rotate(-1deg)}
-.sub{border-radius:var(--wobble);border:2px solid transparent}
-.sub:hover,.sub.on{background:var(--chip);color:#111;border-color:var(--stroke)}
-.sub img,.thumb{border:2px solid var(--stroke);border-radius:var(--wobble2)}
-
-.status{background:var(--panel);border:3px dashed var(--stroke);border-radius:var(--wobble);color:var(--ink);font-weight:700}
-
-.grid{gap:22px}
-.card{border:3px solid var(--stroke);border-radius:var(--wobble);box-shadow:5px 5px 0 var(--shadow);transition:transform .1s}
-.card:nth-child(odd){transform:rotate(-1.2deg)}
-.card:nth-child(even){transform:rotate(1deg)}
-.card:hover{transform:rotate(0) scale(1.03);border-color:var(--stroke)}
-.card img,.card .ph{border-bottom:3px solid var(--stroke)}
-.card .ph{background:var(--accent);color:#111;font-family:var(--display)}
-.card b{font-weight:700}
-
-.feedhead img{border:3px solid var(--stroke);border-radius:var(--wobble);box-shadow:5px 5px 0 var(--shadow);transform:rotate(-2deg)}
-.feedhead h2{font:400 40px/1.05 var(--display)}
-
-#stage{border:3px solid var(--stroke);border-radius:var(--wobble);box-shadow:6px 6px 0 var(--shadow)}
-#stage .bar{border:0;border-top:3px solid var(--stroke);border-radius:0}
-
-.eps{border-top:3px solid var(--stroke)}
-.ep{border-bottom:2px dashed var(--stroke)}
-.ep h3{font-weight:700;font-size:16px}
-.tag{border:2px solid var(--stroke);background:var(--sky);color:#111;font-weight:500}
-.tag.v{background:var(--accent);color:#111}
-.play{border:3px solid var(--stroke);box-shadow:3px 3px 0 var(--shadow);font-size:17px;color:#111}
-.play:hover{transform:rotate(-8deg) scale(1.08)}
-.play:disabled{border-style:dashed;box-shadow:none}
-.more{color:var(--accent);font-weight:700;text-decoration:underline wavy}
-
-#player{border-top:4px solid var(--stroke);background:var(--chip);color:#111}
-#player .np small,.seek{color:#111}
-#player .np img{border:3px solid #111;border-radius:var(--wobble2)}
-.transport button{border:2px solid #111;background:#fff;color:#111;box-shadow:2px 2px 0 #111;border-radius:var(--wobble)}
-.transport .pp{background:var(--accent);border:3px solid #111}
-#speed{border:2px solid #111;background:#fff;color:#111}
-.seek input{accent-color:#111}
+#party .wrap{padding-block:28px 40px}
+#hidePartyBtn,#partyBtn{display:none}
 </style>
 </head>
 <body>
 <header><div class="wrap">
   <div class="brand">
     <span class="mascot" id="mascot" aria-hidden="true"></span>
-    <h1>Puppet Feeds</h1><span>World peace through podcasts. Search, or paste any site, YouTube channel or feed link</span>
+    <h1>Puppet Space</h1><span>A live audio room for the Bitcoin Puppets community.</span>
     <button class="btn party-open" type="button" id="partyBtn"><span class="live-dot"></span>Puppet Space</button>
   </div>
-  <form class="search" id="searchForm">
-    <input id="q" type="search" placeholder="e.g. history   ·   bbc.co.uk   ·   youtube.com/@veritasium" autocomplete="off">
-    <button class="btn primary" type="submit">Go</button>
-  </form>
-  <div class="chips" id="chips"></div>
 </div></header>
 
-<section id="party" hidden><div class="wrap"><div class="party-box" id="partyBox"></div></div></section>
-
-<main><div class="wrap">
-  <aside>
-    <h2>Subscriptions</h2>
-    <div class="subs" id="subs"></div>
-  </aside>
-  <section class="content" id="content"></section>
-</div></main>
+<section id="party"><div class="wrap"><div class="party-box" id="partyBox"></div></div></section>
 
 <footer><div class="wrap">
-  <b>Puppet Feeds</b> is a community derivative of Bitcoin Puppets, shared under the VPL (Viral Public License). Use it, change it, pass it on.
+  <b>Puppet Space</b> is a community derivative of Bitcoin Puppets, shared under the VPL (Viral Public License). Use it, change it, pass it on.
 </div></footer>
-
-<div id="player" hidden><div class="wrap">
-  <div class="np"><img id="npImg" alt=""><div class="npt"><b id="npTitle"></b><small id="npFeed"></small></div></div>
-  <div class="seek"><span id="cur">0:00</span><input id="seek" type="range" min="0" max="0" step="1" value="0" aria-label="Seek"><span id="dur">0:00</span></div>
-  <div class="transport">
-    <button id="back" title="Back 15 seconds">−15</button>
-    <button id="pp" class="pp" title="Play or pause">▶</button>
-    <button id="fwd" title="Forward 30 seconds">+30</button>
-    <select id="speed" aria-label="Speed"><option>0.8</option><option selected>1</option><option>1.25</option><option>1.5</option><option>1.75</option><option>2</option></select>
-  </div>
-</div></div>
-<audio id="audio" preload="metadata"></audio>
 
 <script>
 /* ===== Mascot =====
@@ -311,333 +220,11 @@ const mascotHTML = () => PUPPET_IMAGE ? `<img src="${PUPPET_IMAGE.replace(/"/g,"
 
 const $ = s => document.querySelector(s);
 $("#mascot").innerHTML = mascotHTML();
-const content = $("#content");
-const audio = $("#audio");
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const store = {
   get(k, d){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; }catch{ return d; } },
   set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch{} }
 };
-
-/* ---------- Network: direct first, then public CORS relays ---------- */
-const RELAYS = [
-  u => u,
-  u => "https://api.allorigins.win/raw?url=" + encodeURIComponent(u),
-  u => "https://corsproxy.io/?url=" + encodeURIComponent(u),
-  u => "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(u),
-];
-/* Script-tag loading (JSONP) isn't subject to the same browser restrictions as fetch, so it works in more browsers. */
-function jsonp(url, timeout = 15000){
-  return new Promise((resolve, reject) => {
-    const cb = "fxcb" + Math.random().toString(36).slice(2);
-    const s = document.createElement("script");
-    const done = () => { clearTimeout(t); try{ delete window[cb]; }catch{} s.remove(); };
-    const t = setTimeout(() => { done(); reject(new Error("timed out")); }, timeout);
-    window[cb] = d => { done(); resolve(d); };
-    s.onerror = () => { done(); reject(new Error("blocked")); };
-    s.src = url + (url.includes("?") ? "&" : "?") + "callback=" + cb;
-    document.head.appendChild(s);
-  });
-}
-const FAIL_MSG = "Couldn't load that address. If you're using Brave, its Shields may be blocking the page: try turning Shields off for this page, or open the file in Chrome or Edge.";
-async function getText(url){
-  const ctls = [];
-  const viaFetch = async build => {
-    const ctl = new AbortController(); ctls.push(ctl);
-    const t = setTimeout(() => ctl.abort(), 15000);
-    try{
-      const res = await fetch(build(url), {signal: ctl.signal});
-      if (!res.ok) throw new Error("HTTP " + res.status);
-      const txt = await res.text();
-      if (!txt || txt.length < 20) throw new Error("Empty response");
-      return txt;
-    } finally { clearTimeout(t); }
-  };
-  const viaJsonp = async () => {
-    const d = await jsonp("https://api.allorigins.win/get?url=" + encodeURIComponent(url));
-    if (!d?.contents || d.contents.length < 20) throw new Error("Empty response");
-    return d.contents;
-  };
-  try{
-    const txt = await Promise.any([...RELAYS.map(viaFetch), viaJsonp()]);
-    ctls.forEach(c => c.abort());
-    return txt;
-  }catch{ throw new Error(FAIL_MSG); }
-}
-
-/* ---------- Feed parsing (RSS 2.0, Atom, YouTube) ---------- */
-function kid(el, ...names){ if(!el) return null; for (const n of names) for (const c of el.children) if (c.tagName === n) return c; return null; }
-function kids(el, name){ return el ? [...el.children].filter(c => c.tagName === name) : []; }
-const txt = el => el ? el.textContent.trim() : "";
-const strip = html => { const d = new DOMParser().parseFromString(html || "", "text/html"); return (d.body.textContent || "").replace(/\s+/g, " ").trim(); };
-
-function mediaKind(url, type){
-  type = (type || "").toLowerCase(); const u = (url || "").toLowerCase().split("?")[0];
-  if (type.startsWith("video") || /\.(mp4|m4v|webm|mov)$/.test(u)) return "video";
-  if (type.startsWith("audio") || /\.(mp3|m4a|aac|ogg|oga|opus|wav|flac)$/.test(u)) return "audio";
-  return null;
-}
-function looksLikeFeed(t){ return /<(rss|feed|rdf:RDF)[\s>]/i.test(t.slice(0, 3000)); }
-
-function parseFeed(xmlText, feedUrl){
-  const doc = new DOMParser().parseFromString(xmlText, "text/xml");
-  if (doc.querySelector("parsererror")) throw new Error("That address didn't return a readable feed.");
-  const root = doc.documentElement;
-  const feed = {url: feedUrl, title:"", description:"", image:"", link:"", items:[]};
-  if (root.tagName === "feed"){ // Atom / YouTube
-    feed.title = txt(kid(root,"title"));
-    feed.description = strip(txt(kid(root,"subtitle")));
-    feed.image = txt(kid(root,"logo")) || txt(kid(root,"icon"));
-    const alt = kids(root,"link").find(l => (l.getAttribute("rel")||"alternate") === "alternate");
-    feed.link = alt?.getAttribute("href") || "";
-    for (const e of kids(root,"entry")){
-      const g = kid(e,"media:group");
-      const vid = txt(kid(e,"yt:videoId"));
-      const encl = kids(e,"link").find(l => l.getAttribute("rel") === "enclosure");
-      const mc = kid(g,"media:content") || kid(e,"media:content");
-      const link = kids(e,"link").find(l => (l.getAttribute("rel")||"alternate") === "alternate")?.getAttribute("href") || "";
-      let media = encl?.getAttribute("href") || mc?.getAttribute("url") || "";
-      let kind = vid ? "youtube" : mediaKind(media, encl?.getAttribute("type") || mc?.getAttribute("type"));
-      feed.items.push({
-        title: txt(kid(e,"title")), link, date: txt(kid(e,"published")) || txt(kid(e,"updated")),
-        desc: strip(txt(kid(g,"media:description")) || txt(kid(e,"summary")) || txt(kid(e,"content"))),
-        image: kid(g,"media:thumbnail")?.getAttribute("url") || "", media, kind, vid, duration: ""
-      });
-    }
-    if (!feed.image && feed.items[0]?.vid) feed.image = feed.items[0].image;
-  } else { // RSS 2.0 / RDF
-    const ch = kid(root,"channel") || root;
-    feed.title = txt(kid(ch,"title"));
-    feed.description = strip(txt(kid(ch,"description")) || txt(kid(ch,"itunes:summary")));
-    feed.image = kid(ch,"itunes:image")?.getAttribute("href") || txt(kid(kid(ch,"image"),"url"));
-    feed.link = txt(kid(ch,"link"));
-    const items = kids(ch,"item").length ? kids(ch,"item") : kids(root,"item");
-    for (const it of items){
-      const enc = kid(it,"enclosure");
-      const mc = kid(it,"media:content") || kid(kid(it,"media:group"),"media:content");
-      const media = enc?.getAttribute("url") || mc?.getAttribute("url") || "";
-      feed.items.push({
-        title: txt(kid(it,"title")), link: txt(kid(it,"link")), date: txt(kid(it,"pubDate")) || txt(kid(it,"dc:date")),
-        desc: strip(txt(kid(it,"description")) || txt(kid(it,"itunes:summary")) || txt(kid(it,"content:encoded"))),
-        image: kid(it,"itunes:image")?.getAttribute("href") || kid(it,"media:thumbnail")?.getAttribute("url") || "",
-        media, kind: mediaKind(media, enc?.getAttribute("type") || mc?.getAttribute("type")),
-        duration: txt(kid(it,"itunes:duration"))
-      });
-    }
-  }
-  feed.title ||= new URL(feedUrl).hostname;
-  return feed;
-}
-
-/* ---------- Discovery: turn any link into feed candidates ---------- */
-const COMMON = ["/feed","/rss","/feed.xml","/rss.xml","/atom.xml","/index.xml","/feed/podcast","/podcast.xml"];
-async function discover(input){
-  let url = input.trim(); if (!/^https?:\/\//i.test(url)) url = "https://" + url;
-  const u = new URL(url); const host = u.hostname.replace(/^www\.|^m\./,"");
-  if (host === "youtube.com" || host === "youtu.be"){
-    const list = u.searchParams.get("list");
-    if (list) return [{url:`https://www.youtube.com/feeds/videos.xml?playlist_id=${list}`, title:"YouTube playlist"}];
-    const m = u.pathname.match(/\/channel\/(UC[\w-]{22})/);
-    if (m) return [{url:`https://www.youtube.com/feeds/videos.xml?channel_id=${m[1]}`, title:"YouTube channel"}];
-    const html = await getText(url);
-    const id = (html.match(/"(?:channelId|externalId)":"(UC[\w-]{22})"/) || html.match(/channel_id=(UC[\w-]{22})/) || [])[1];
-    if (id) return [{url:`https://www.youtube.com/feeds/videos.xml?channel_id=${id}`, title:"YouTube channel"}];
-    throw new Error("Couldn't find the channel on that YouTube page. Try the channel's main page link.");
-  }
-  if (host === "reddit.com" && /^\/r\/[^/]+/.test(u.pathname))
-    return [{url:`https://www.reddit.com${u.pathname.replace(/\/$/,"")}/.rss`, title:"Subreddit"}];
-
-  const body = await getText(url);
-  if (looksLikeFeed(body)) return [{url, title:"", direct: body}];
-  const doc = new DOMParser().parseFromString(body, "text/html");
-  const found = [...doc.querySelectorAll('link[rel~="alternate"]')]
-    .filter(l => /(rss|atom)\+xml|application\/xml|text\/xml/i.test(l.getAttribute("type")||""))
-    .map(l => ({url: new URL(l.getAttribute("href"), url).href, title: l.getAttribute("title") || ""}));
-  if (found.length) return dedupe(found);
-  const tries = await Promise.all(COMMON.map(async p => {
-    const cand = new URL(p, u.origin).href;
-    try{ const t = await getText(cand); return looksLikeFeed(t) ? {url:cand, title:p, direct:t} : null; }catch{ return null; }
-  }));
-  const ok = tries.filter(Boolean);
-  if (ok.length) return dedupe(ok);
-  throw new Error("No feed found on that site. Some sites don't publish one.");
-}
-const dedupe = a => a.filter((x,i) => a.findIndex(y => y.url === x.url) === i);
-
-/* ---------- Podcast search (Apple's public directory) ---------- */
-async function searchPodcasts(term){
-  const api = `https://itunes.apple.com/search?media=podcast&limit=36&term=${encodeURIComponent(term)}`;
-  let data;
-  try{ data = await jsonp(api); }
-  catch{ data = JSON.parse(await getText(api)); }
-  return data.results.filter(r => r.feedUrl).map(r => ({
-    url: r.feedUrl, title: r.collectionName, by: r.artistName, image: r.artworkUrl600 || r.artworkUrl100, genre: r.primaryGenreName, count: r.trackCount
-  }));
-}
-
-/* ---------- State ---------- */
-let subs = store.get("fx.subs", []);
-let current = null;      // feed on screen
-let playing = null;      // {item, feed}
-const feedCache = new Map();
-
-function saveSubs(){ store.set("fx.subs", subs); renderSubs(); }
-const isSub = url => subs.some(s => s.url === url);
-function toggleSub(feed){
-  if (isSub(feed.url)) subs = subs.filter(s => s.url !== feed.url);
-  else subs.unshift({url: feed.url, title: feed.title, image: feed.image});
-  saveSubs(); if (current?.url === feed.url) renderFeed(current);
-}
-
-/* ---------- Rendering ---------- */
-const CHIPS = ["News","Technology","Science","History","Comedy","True crime","Business","Football"];
-$("#chips").innerHTML = CHIPS.map(c => `<button class="chip" data-q="${esc(c)}">${esc(c)}</button>`).join("");
-$("#chips").addEventListener("click", e => { const q = e.target.dataset.q; if (q){ $("#q").value = q; go(q); } });
-
-function renderSubs(){
-  const el = $("#subs");
-  if (!subs.length){ el.innerHTML = `<p class="empty">Open a feed and press Subscribe to keep it here.</p>`; return; }
-  el.innerHTML = subs.map((s,i) => `<button class="sub ${current?.url===s.url?"on":""}" data-i="${i}">
-    ${s.image ? `<img src="${esc(s.image)}" alt="" loading="lazy">` : `<span class="thumb"></span>`}<b>${esc(s.title)}</b></button>`).join("");
-}
-$("#subs").addEventListener("click", e => { const b = e.target.closest(".sub"); if (b) openFeed(subs[b.dataset.i].url); });
-
-function status(msg, err){ return `<div class="status ${err?"err":""}"><span class="mascot">${mascotHTML()}</span>${esc(msg)}</div>`; }
-
-function renderCards(list, heading){
-  content.innerHTML = `<h2 class="section-h">${esc(heading)}</h2><div class="grid">${list.map((r,i) => `
-    <button class="card" data-i="${i}">
-      ${r.image ? `<img src="${esc(r.image)}" alt="" loading="lazy">` : `<div class="ph">RSS</div>`}
-      <div class="meta"><b>${esc(r.title || r.url)}</b><small>${esc(r.by || r.genre || new URL(r.url).hostname)}${r.count ? " · " + r.count + " episodes" : ""}</small></div>
-    </button>`).join("")}</div>`;
-  content.querySelectorAll(".card").forEach(c => c.onclick = () => openFeed(list[c.dataset.i].url, list[c.dataset.i].direct));
-}
-
-function fmtDate(d){ const t = new Date(d); return isNaN(t) ? "" : t.toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}); }
-function fmtDur(d){
-  if (!d) return ""; if (/^\d+$/.test(d)) { const s = +d; return s >= 3600 ? `${Math.floor(s/3600)}h ${Math.floor(s%3600/60)}m` : `${Math.round(s/60)} min`; }
-  return d;
-}
-const clock = s => { s = Math.max(0, Math.floor(s||0)); const h = Math.floor(s/3600), m = Math.floor(s%3600/60), x = String(s%60).padStart(2,"0"); return h ? `${h}:${String(m).padStart(2,"0")}:${x}` : `${m}:${x}`; };
-
-function renderFeed(feed){
-  current = feed; renderSubs();
-  const sub = isSub(feed.url);
-  const playable = feed.items.filter(i => i.kind).length;
-  content.innerHTML = `
-    <div class="feedhead">
-      ${feed.image ? `<img src="${esc(feed.image)}" alt="">` : ""}
-      <div class="t">
-        <h2>${esc(feed.title)}</h2>
-        ${feed.description ? `<p>${esc(feed.description.slice(0,280))}${feed.description.length>280?"…":""}</p>` : ""}
-        <div class="row">
-          <button class="btn ${sub?"":"primary"}" id="subBtn">${sub ? "Unsubscribe" : "Subscribe"}</button>
-          <button class="btn" id="copyBtn">Copy feed link</button>
-          ${feed.link ? `<a class="btn" href="${esc(feed.link)}" target="_blank" rel="noopener" style="text-decoration:none">Visit site</a>` : ""}
-        </div>
-        <div class="url">${esc(feed.url)} · ${feed.items.length} items, ${playable} playable</div>
-      </div>
-    </div>
-    <div id="stage" hidden></div>
-    <div class="eps">${feed.items.map((it,i) => {
-      const tag = it.kind === "youtube" ? `<span class="tag v">Video</span>` : it.kind === "video" ? `<span class="tag v">Video</span>` : it.kind === "audio" ? `<span class="tag">Audio</span>` : `<span class="tag">Article</span>`;
-      const img = it.image || feed.image;
-      const long = it.desc.length > 220;
-      return `<div class="ep" data-i="${i}">
-        ${img ? `<img class="thumb ${it.kind==="youtube"?"yt":""}" src="${esc(img)}" alt="" loading="lazy">` : `<span class="thumb"></span>`}
-        <div class="txt">
-          <h3>${esc(it.title || "Untitled")}</h3>
-          <div class="info">${tag}<span>${esc(fmtDate(it.date))}</span>${it.duration ? `<span>${esc(fmtDur(it.duration))}</span>` : ""}</div>
-          ${it.desc ? `<p data-full="${esc(it.desc)}">${esc(it.desc.slice(0,220))}${long?"… ":""}${long?`<button class="more">more</button>`:""}</p>` : ""}
-        </div>
-        ${it.kind ? `<button class="play" title="Play" aria-label="Play ${esc(it.title)}">▶</button>`
-                  : it.link ? `<a class="play" href="${esc(it.link)}" target="_blank" rel="noopener" title="Open article" style="text-decoration:none">↗</a>` : `<button class="play" disabled>–</button>`}
-      </div>`; }).join("")}</div>`;
-  $("#subBtn").onclick = () => toggleSub(feed);
-  $("#copyBtn").onclick = async e => { try{ await navigator.clipboard.writeText(feed.url); e.target.textContent = "Copied"; }catch{ e.target.textContent = "Copy failed"; } };
-  content.querySelectorAll(".ep").forEach(row => {
-    const it = feed.items[row.dataset.i];
-    row.querySelector("button.play:not([disabled])")?.addEventListener("click", () => play(it, feed));
-    row.querySelector(".more")?.addEventListener("click", e => { const p = e.target.parentElement; p.textContent = p.dataset.full; });
-  });
-}
-
-/* ---------- Actions ---------- */
-async function go(q){
-  q = q.trim(); if (!q) return;
-  const isUrl = /^https?:\/\//i.test(q) || /^[\w-]+(\.[\w-]+)+(\/|$)/.test(q);
-  content.innerHTML = status(isUrl ? "Looking for feeds on that site…" : `Searching podcasts for “${q}”…`);
-  try{
-    if (isUrl){
-      const found = await discover(q);
-      if (found.length === 1) return openFeed(found[0].url, found[0].direct);
-      renderCards(found, `${found.length} feeds found`);
-    } else {
-      const res = await searchPodcasts(q);
-      if (!res.length){ content.innerHTML = status(`No podcasts found for “${q}”. Try a different word.`); return; }
-      renderCards(res, `Podcasts matching “${q}”`);
-    }
-  }catch(e){ content.innerHTML = status(e.message, true); }
-}
-
-async function openFeed(url, direct){
-  content.innerHTML = status("Loading feed…");
-  try{
-    let feed = feedCache.get(url);
-    if (!feed){ feed = parseFeed(direct || await getText(url), url); feedCache.set(url, feed); }
-    const s = subs.find(x => x.url === url); if (s && (s.title !== feed.title || s.image !== feed.image)){ s.title = feed.title; s.image = feed.image; store.set("fx.subs", subs); }
-    renderFeed(feed); window.scrollTo({top:0, behavior:"smooth"});
-  }catch(e){ content.innerHTML = status(e.message, true); }
-}
-
-$("#searchForm").addEventListener("submit", e => { e.preventDefault(); go($("#q").value); });
-
-/* ---------- Playback ---------- */
-const positions = store.get("fx.pos", {});
-function play(it, feed){
-  const stage = $("#stage");
-  if (it.kind === "audio"){
-    if (stage){ stage.hidden = true; stage.innerHTML = ""; }
-    playing = {it, feed};
-    if (audio.src !== it.media){ audio.src = it.media; audio.currentTime = positions[it.media] || 0; }
-    audio.play().catch(() => {});
-    $("#player").hidden = false;
-    $("#npTitle").textContent = it.title; $("#npFeed").textContent = feed.title;
-    $("#npImg").src = it.image || feed.image || "";
-    return;
-  }
-  audio.pause();
-  if (!stage) return;
-  stage.hidden = false;
-  const media = it.kind === "youtube"
-    ? `<iframe src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(it.vid)}?autoplay=1" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>`
-    : `<video src="${esc(it.media)}" controls autoplay playsinline></video>`;
-  stage.innerHTML = media + `<div class="bar"><b style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(it.title)}</b><button class="btn" id="closeStage">Close</button></div>`;
-  $("#closeStage").onclick = () => { stage.hidden = true; stage.innerHTML = ""; };
-  stage.scrollIntoView({behavior:"smooth", block:"start"});
-}
-const seek = $("#seek");
-audio.addEventListener("loadedmetadata", () => { seek.max = Math.floor(audio.duration || 0); $("#dur").textContent = clock(audio.duration); });
-let lastSave = 0;
-audio.addEventListener("timeupdate", () => {
-  if (!seek.matches(":active")) seek.value = Math.floor(audio.currentTime);
-  $("#cur").textContent = clock(audio.currentTime);
-  if (Date.now() - lastSave > 5000 && audio.src){ positions[audio.src] = audio.currentTime; store.set("fx.pos", positions); lastSave = Date.now(); }
-});
-audio.addEventListener("play", () => $("#pp").textContent = "❚❚");
-audio.addEventListener("pause", () => $("#pp").textContent = "▶");
-audio.addEventListener("ended", () => { delete positions[audio.src]; store.set("fx.pos", positions); });
-audio.addEventListener("error", () => { $("#npFeed").textContent = "This episode's audio couldn't be loaded."; });
-seek.addEventListener("input", () => audio.currentTime = +seek.value);
-$("#pp").onclick = () => audio.paused ? audio.play() : audio.pause();
-$("#back").onclick = () => audio.currentTime -= 15;
-$("#fwd").onclick = () => audio.currentTime += 30;
-$("#speed").onchange = e => audio.playbackRate = +e.target.value;
-document.addEventListener("keydown", e => {
-  if (e.target.matches("input,select,textarea") || $("#player").hidden) return;
-  if (e.code === "Space"){ e.preventDefault(); $("#pp").click(); }
-});
-
 /* ---------- Puppet Space: live audio room on LiveKit ----------
    Roles live on the server: the pass function decides who can speak, and the room enforces it. */
 const SPACE_API = "/api/space";
@@ -897,10 +484,8 @@ $("#partyBox").addEventListener("click", e => {
 $("#partyBtn").onclick = () => { const p = $("#party"); p.hidden = !p.hidden; if (!p.hidden){ renderSpace(); p.scrollIntoView({behavior:"smooth", block:"nearest"}); } };
 window.addEventListener("beforeunload", () => { try{ room?.disconnect(); }catch{} });
 if (location.hash === "#space" || location.hash === "#party"){ $("#party").hidden = false; renderSpace(); }
-/* ---------- Start in a working state ---------- */
-renderSubs();
-if (subs.length) openFeed(subs[0].url);
-else { $("#q").value = "Technology"; go("Technology"); }
+/* ---------- Start ---------- */
+renderSpace();
 </script>
 </body>
 </html>
